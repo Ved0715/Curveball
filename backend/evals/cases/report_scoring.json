@@ -1,0 +1,261 @@
+{
+  "about": "Report scoring eval. Each case is a finished mock interview with answers of known quality. Transcript turns: q = main question, f = follow-up, a = candidate answer, close = interviewer closing. Expectations are score bands, not exact numbers.",
+  "personas": {
+    "asha": {
+      "resume": "Asha Rao, Backend Engineer, 3 years building payment systems\nRazorpay, Software Engineer II (Jan 2022 - Present)\n- Built the UPI reconciliation service in Go; cut p95 latency from 900 ms to 540 ms (40%).\n- Moved settlement jobs to Kafka consumers, scaling to 2M transactions/day with zero missed settlements in 6 months.\n- On-call lead for the payouts team; wrote the incident runbook adopted by 4 teams.\nSwiggy, SDE Intern (May 2021 - Dec 2021)\n- Shipped the order-tracking API in Python (FastAPI); 120 ms median response.\nProjects: LedgerLite, a double-entry ledger in Python and Postgres used by 10k users.\nSkills: Go, Python, Postgres, Kafka, Redis, Docker, AWS\nEducation: B.Tech Computer Science, VIT Vellore (2021)",
+      "jd": "Backend Engineer (2-5 years) at a fintech. Design and run high-throughput payment services in Go or Java. Own reliability: on-call, incident response, observability. Strong SQL, queues (Kafka), and distributed systems basics. Clear communication with product and ops."
+    },
+    "vikram": {
+      "resume": "Vikram Menon, Senior Software Engineer, 9 years\nPhonePe, Staff Engineer (2020 - Present)\n- Led the migration of the wallet ledger from a monolith to 6 services; 18 months, 11 engineers, zero data loss.\n- Designed idempotent payment APIs handling 45k requests/second at peak.\n- Cut infrastructure cost by 32% (about 2.1 crore INR a year) by right-sizing Kafka and Cassandra clusters.\nFlipkart, Senior SDE (2015 - 2020)\n- Built the Big Billion Days order pipeline; 99.99% availability during sale peaks.\n- Mentored 7 engineers; 3 promoted to senior.\nSkills: Java, Go, Kafka, Cassandra, MySQL, Kubernetes, system design\nEducation: B.E. Computer Engineering, NIT Trichy (2015)",
+      "jd": "Senior Backend Engineer (6+ years). Lead design of distributed payment systems, drive technical decisions across teams, mentor engineers, and own availability and cost of critical services."
+    },
+    "neha": {
+      "resume": "Neha Sharma, final-year B.Com (Hons), Delhi University (2026)\nInternship: Zomato, Business Analyst Intern (May 2025 - Jul 2025)\n- Built a Power BI dashboard tracking restaurant churn across 3 cities; used weekly by 12 city managers.\n- Found that 18% of churned restaurants had delivery times above 45 minutes; recommendation piloted in Jaipur.\nProjects: Campus canteen demand forecast in Excel; reduced food waste by 22% over one semester.\nSkills: Excel, SQL, Power BI, Python (Pandas), presentation\nPositions: Treasurer, Finance Club (managed a 4 lakh INR budget)",
+      "jd": "Business Analyst (fresher / 0-2 years). Analyse operational data with SQL and Excel, build dashboards, and turn findings into recommendations for city and category teams. Strong communication and structured thinking."
+    }
+  },
+  "cases": [
+    {
+      "id": "strong-senior",
+      "why": "Specific, owned, quantified answers with trade-offs from a senior candidate. Honest scoring must still reward strong answers.",
+      "tags": ["strong", "senior"],
+      "persona": "vikram",
+      "setup": { "role": "Senior Backend Engineer", "company": "Razorpay", "level": "Senior (6+ yrs)", "round": "Mixed (like a real first round)", "style": "Neutral" },
+      "transcript": [
+        { "q": "Hi, I'm Priya. Tell me about the most complex system migration you've led." },
+        { "a": "The wallet ledger migration at PhonePe. The monolith was our biggest outage risk: a single Postgres primary took every wallet write. I owned the design and led 11 engineers over 18 months. I split it into 6 services around clear ownership boundaries, and the hard part was moving money without double-spend. We ran dual writes behind a feature flag, reconciled old and new ledgers every hour, and only cut over a merchant cohort once reconciliation showed zero mismatches for 7 days. We finished with zero data loss, and write latency went from 180 to 60 milliseconds at p99. The trade-off I'd call out: dual writes doubled our ops load for about 4 months, which I accepted because a big-bang cutover on money was not a risk I'd take." },
+        { "f": "How did you handle a mismatch when reconciliation did find one?" },
+        { "a": "We had 3 real mismatches. Each froze that cohort's cutover automatically. For one, a retry storm had created duplicate debit events; we traced it to a missing idempotency key on one client path. I added idempotency keys at the API gateway so every write path had one, backfilled the 212 affected entries with finance signing off, and added the case to our reconciliation test suite so it couldn't regress." },
+        { "q": "How do you decide between building for scale now versus later?" },
+        { "a": "I size against the next 18 months of real load, not a hypothetical. For the payment APIs I designed at PhonePe, we projected 30k requests per second at peak and built for 45k with idempotent, stateless handlers so we could scale horizontally. What I don't do is add sharding or new datastores before the numbers need them. At Flipkart I pushed back on sharding the order database a year early; we added read replicas instead, which held through Big Billion Days at 99.99% availability and saved about 6 months of work." },
+        { "q": "Tell me about a time you reduced cost without hurting reliability." },
+        { "a": "Our Kafka and Cassandra clusters were sized for a peak that happened 4 days a year. I led an audit of utilisation per topic and table, and found average CPU at 11%. We moved to autoscaling consumer groups, tiered storage for older Kafka data, and right-sized Cassandra nodes after load-testing at 1.5x peak. Cost dropped 32%, about 2.1 crore rupees a year, and we had no reliability regressions over the next two sale events. I made the rollback plan the first deliverable, so every step could be undone in under 10 minutes." },
+        { "close": "That's all from me. Thanks, Vikram." }
+      ],
+      "expect": {
+        "overall": [72, 100],
+        "verdict_in": ["Hire", "Strong hire"],
+        "answers": [{ "min": 7 }, { "min": 7 }, { "min": 7 }],
+        "anchors": ["PhonePe", "ledger", "Flipkart", "Kafka", "Cassandra", "45k", "idempot", "migration"]
+      }
+    },
+    {
+      "id": "average-mid",
+      "why": "Relevant but thin: says 'we' instead of 'I', no numbers, skips part of the question. Should land in the middle, not the top.",
+      "tags": ["average", "mid"],
+      "persona": "asha",
+      "setup": { "role": "Backend Engineer", "company": "Cred", "level": "Mid-level (3–6 yrs)", "round": "Mixed (like a real first round)", "style": "Neutral" },
+      "transcript": [
+        { "q": "Hi, I'm Daniel. Walk me through a service you built and your role in it." },
+        { "a": "At Razorpay we built a reconciliation service for UPI. It matches our records with the bank's records. We used Go and Postgres. It was a big improvement on the old system, which was slow. The team worked on it for a few months and it went well." },
+        { "f": "What did you personally own, and how did you measure the improvement?" },
+        { "a": "I worked on a lot of the backend parts. It was faster after we launched, the dashboards looked much better, and the ops team was happy with it." },
+        { "q": "Tell me about a production incident you handled." },
+        { "a": "There was an incident where settlements were delayed. We looked at the logs and found a problem with one of the jobs, so we fixed it and restarted it. After that we added some monitoring so it wouldn't happen again. It took a few hours to resolve." },
+        { "q": "How would you design a rate limiter for a payments API?" },
+        { "a": "I would use Redis to keep a counter per user or per API key, and if the count goes over a limit in a time window we return a 429. The window could be something like one minute. That's a common approach and it works well." },
+        { "close": "Thanks, that's the end of our session." }
+      ],
+      "expect": {
+        "overall": [35, 68],
+        "verdict_in": ["Borderline", "Not yet", "Hire"],
+        "answers": [{ "min": 3, "max": 6 }, { "min": 3, "max": 7 }, { "min": 4, "max": 7 }],
+        "anchors": ["Razorpay", "UPI", "reconciliation", "Kafka", "540", "40%", "2M", "runbook", "Redis"]
+      }
+    },
+    {
+      "id": "weak-vague",
+      "why": "The core honesty rule: generic, buzzword answers with no specifics must never score above 5/10.",
+      "tags": ["weak", "vague-cap"],
+      "persona": "asha",
+      "setup": { "role": "Backend Engineer", "company": "Zerodha", "level": "Junior (1–3 yrs)", "round": "Behavioral", "style": "Neutral" },
+      "transcript": [
+        { "q": "Hi, I'm Meera. Tell me about a time you took ownership of something difficult." },
+        { "a": "I always take ownership of my work. I'm a very responsible person and I believe in giving 100 percent. Whenever something difficult comes up, I make sure it gets done. My managers have always appreciated my ownership." },
+        { "q": "Describe a disagreement with a teammate and how you resolved it." },
+        { "a": "I'm a team player, so I don't really have conflicts. If there's a disagreement I listen to everyone and we find the best solution together. Communication is key." },
+        { "q": "What's a mistake you made and what did you learn?" },
+        { "a": "Sometimes I work too hard and take on too much. I learned that it's important to balance things and to ask for help when needed. Now I manage my time better." },
+        { "close": "Thanks, that's all for today." }
+      ],
+      "expect": {
+        "overall": [0, 45],
+        "verdict_in": ["Not yet", "Borderline"],
+        "answers": [{ "max": 5 }, { "max": 5 }, { "max": 5 }],
+        "anchors": ["Razorpay", "UPI", "reconciliation", "Kafka", "on-call", "runbook", "incident", "Swiggy", "settlement", "LedgerLite"]
+      }
+    },
+    {
+      "id": "evasive",
+      "why": "Non-answers ('I don't know', 'can we skip') should score at the very bottom.",
+      "tags": ["weak", "evasive"],
+      "persona": "asha",
+      "setup": { "role": "Backend Engineer", "company": "Paytm", "level": "Junior (1–3 yrs)", "round": "Technical concepts", "style": "Neutral" },
+      "transcript": [
+        { "q": "Hi, I'm Arjun. How does a database index speed up a query?" },
+        { "a": "I don't know, I usually just use the ORM." },
+        { "q": "What happens when a Kafka consumer crashes mid-batch?" },
+        { "a": "Can we skip this one?" },
+        { "q": "How would you make a payment API safe to retry?" },
+        { "a": "Not sure. Maybe just retry?" },
+        { "close": "Okay, let's stop there. Thank you." }
+      ],
+      "expect": {
+        "overall": [0, 25],
+        "verdict_in": ["Not yet"],
+        "answers": [{ "max": 3 }, { "max": 3 }, { "max": 3 }],
+        "anchors": ["Postgres", "Kafka", "idempot", "Razorpay", "settlement", "reconciliation", "UPI", "index"]
+      }
+    },
+    {
+      "id": "long-but-empty",
+      "why": "Length is not quality: long, confident answers with no concrete content must still be capped at 5/10.",
+      "tags": ["weak", "vague-cap"],
+      "persona": "asha",
+      "setup": { "role": "Backend Engineer", "company": "Groww", "level": "Mid-level (3–6 yrs)", "round": "Behavioral", "style": "Neutral" },
+      "transcript": [
+        { "q": "Hi, I'm Sofia. Tell me about a project you're proud of." },
+        { "a": "So I think the project I'm most proud of is really about the journey more than the destination, you know. In my career I've worked on many different kinds of systems and each one taught me something valuable. What I've found is that the most important thing is to understand the business requirements deeply, align with stakeholders, and make sure that the technical solution is robust, scalable and maintainable. I always try to follow best practices, write clean code, and think about the long-term impact of every decision. It's also really about collaboration, because no project succeeds without a great team, and I've been lucky to work with amazing people. Overall I would say it was a very successful project that delivered a lot of value to the organisation and to our customers, and I learned a lot from it." },
+        { "q": "How do you approach debugging a production issue?" },
+        { "a": "Debugging is honestly one of my favourite parts of engineering because it's like being a detective. My approach is very holistic. First I try to stay calm, because panicking never helps anyone. Then I try to understand the full picture, look at all the relevant information, and think about what could possibly be going wrong. I believe in being methodical and systematic, and also in communicating clearly with everyone involved so that stakeholders are aware. After it's resolved I always think about lessons learned and how we can prevent similar issues in the future, because continuous improvement is really important to me." },
+        { "close": "Thanks, that's the end of our time." }
+      ],
+      "expect": {
+        "overall": [0, 45],
+        "verdict_in": ["Not yet", "Borderline"],
+        "answers": [{ "max": 5 }, { "max": 5 }],
+        "anchors": ["Razorpay", "UPI", "reconciliation", "Kafka", "540", "40%", "2M", "LedgerLite", "on-call", "runbook"]
+      }
+    },
+    {
+      "id": "mixed-strong-and-vague",
+      "why": "Per-answer discrimination inside one interview: strong answers high, the vague one capped.",
+      "tags": ["mixed", "vague-cap"],
+      "persona": "asha",
+      "setup": { "role": "Backend Engineer", "company": "Razorpay", "level": "Junior (1–3 yrs)", "round": "Mixed (like a real first round)", "style": "Neutral" },
+      "transcript": [
+        { "q": "Hi, I'm Rahul. Tell me about something you built that you're proud of." },
+        { "a": "The UPI reconciliation service at Razorpay. Reconciliation ran as a nightly batch and took 5 hours, so mismatches were found a day late. I rewrote the matching step in Go as a streaming job and personally owned the design and rollout. I added a hash index on the bank reference and processed files in parallel chunks. Batch time went from 5 hours to 40 minutes, and p95 latency on the lookup API dropped from 900 to 540 milliseconds. I ran it in shadow mode for 2 weeks and compared outputs line by line before switching over." },
+        { "q": "Tell me about a time you disagreed with your manager." },
+        { "a": "I don't really disagree with managers much. I think it's important to respect their decisions and I usually go with what the team thinks is best." },
+        { "q": "How did you scale the settlement jobs?" },
+        { "a": "Settlements ran as cron jobs on one machine, and at around 800k transactions a day they started missing the bank cutoff. I proposed moving them to Kafka consumers partitioned by merchant, and I built the consumer group and the retry path with idempotency keys so reprocessing a message could never pay twice. We scaled to 2M transactions a day with zero missed settlements over 6 months, and I wrote the runbook for the on-call team." },
+        { "close": "Great, that's everything. Thanks." }
+      ],
+      "expect": {
+        "overall": [45, 82],
+        "verdict_in": ["Borderline", "Hire"],
+        "answers": [{ "min": 7 }, { "max": 5 }, { "min": 7 }],
+        "anchors": ["Razorpay", "UPI", "reconciliation", "Kafka", "settlement", "540", "2M", "runbook", "Swiggy", "on-call"]
+      }
+    },
+    {
+      "id": "calibration-fresher-level",
+      "why": "Same decent answers as the next case, judged at fresher level. Must score higher than when judged as senior.",
+      "tags": ["calibration", "fresher"],
+      "persona": "neha",
+      "group": "calibration",
+      "setup": { "role": "Business Analyst", "company": "Swiggy", "level": "Intern / fresher", "round": "Mixed (like a real first round)", "style": "Neutral" },
+      "transcript": [
+        { "q": "Hi, I'm Hannah. Tell me about an analysis you did that led to a decision." },
+        { "a": "At my Zomato internship I built a Power BI dashboard for restaurant churn across 3 cities. While building it I noticed churned restaurants often had slow deliveries, so I checked it in SQL: 18% of churned restaurants had average delivery times above 45 minutes, compared with 6% of active ones. I presented this to my manager, and the Jaipur team ran a pilot to prioritise riders for those restaurants." },
+        { "q": "How would you figure out why orders dropped 10% in a city last week?" },
+        { "a": "First I'd check whether the drop is real and not a data issue, like a missing day in the pipeline. Then I'd split it: new versus repeat customers, by area, by restaurant category, and by time of day, to find where the drop is concentrated. I'd also look for outside causes like rain, a competitor's discount, or an app release. Once I knew where it was, I'd talk to the city team to confirm the reason." },
+        { "q": "Tell me about a time you worked with limited data." },
+        { "a": "For the canteen forecast project we only had one semester of handwritten sales records. I typed them into Excel, used a simple moving average by weekday, and adjusted for exam weeks. It wasn't perfect, but the canteen used it to plan quantities and food waste went down 22% over the semester." },
+        { "close": "Thanks Neha, that's all." }
+      ],
+      "expect": {
+        "overall": [55, 90],
+        "verdict_in": ["Hire", "Strong hire", "Borderline"],
+        "answers": [{ "min": 6 }, { "min": 5 }, { "min": 5 }],
+        "anchors": ["Zomato", "Power BI", "churn", "18%", "Jaipur", "canteen", "22%", "SQL", "Excel", "Finance Club"]
+      }
+    },
+    {
+      "id": "calibration-senior-level",
+      "why": "Identical answers to the previous case, judged against a senior bar. Must score clearly lower (scores are relative to level).",
+      "tags": ["calibration", "senior"],
+      "persona": "neha",
+      "group": "calibration",
+      "setup": { "role": "Business Analyst", "company": "Swiggy", "level": "Senior (6+ yrs)", "round": "Mixed (like a real first round)", "style": "Neutral" },
+      "transcript": "same-as:calibration-fresher-level",
+      "expect": {
+        "overall": [0, 70],
+        "verdict_in": ["Borderline", "Not yet", "Hire"],
+        "answers": [{}, {}, {}],
+        "anchors": ["Zomato", "Power BI", "churn", "18%", "Jaipur", "canteen", "22%", "SQL", "Excel", "Finance Club"]
+      }
+    },
+    {
+      "id": "strong-fresher",
+      "why": "A fresher with well-structured, quantified answers from college work. Level-appropriate strength must be rewarded.",
+      "tags": ["strong", "fresher"],
+      "persona": "neha",
+      "setup": { "role": "Business Analyst", "company": "Blinkit", "level": "Intern / fresher", "round": "Behavioral", "style": "Friendly" },
+      "transcript": [
+        { "q": "Hi, I'm Kabir. Tell me about a time you had to influence someone without authority." },
+        { "a": "As Finance Club treasurer I managed a 4 lakh rupee budget, and the events team wanted to spend 60% of it on one fest. I didn't have authority to block it, so I built a one-page sheet showing last year's spend per event against attendance: the fest cost 3 times more per attendee than our workshops. I shared it with the president and the events lead before the meeting, suggested we cap the fest at 40% and move the rest to two workshops, and they agreed. Workshop attendance that year went from 90 to 210 people." },
+        { "q": "Tell me about a mistake you made and what you changed." },
+        { "a": "In my Zomato internship I sent a churn number to 12 city managers that double-counted restaurants that had closed and reopened. A manager in Pune spotted it the next day. I owned it: I sent a correction within the hour, explained the cause, and added a deduplication step and a row-count check to the SQL before every refresh. After that I also had my manager review any new metric before it went out, and there were no more errors for the rest of the internship." },
+        { "close": "Great answers, thank you Neha." }
+      ],
+      "expect": {
+        "overall": [65, 100],
+        "verdict_in": ["Hire", "Strong hire"],
+        "answers": [{ "min": 7 }, { "min": 7 }],
+        "anchors": ["Zomato", "Power BI", "Finance Club", "4 lakh", "churn", "SQL", "12", "canteen", "Excel"]
+      }
+    },
+    {
+      "id": "followups-fold",
+      "why": "Two main questions with a follow-up each: the report must have exactly one entry per main question.",
+      "tags": ["structure", "mid"],
+      "persona": "asha",
+      "setup": { "role": "Backend Engineer", "company": "Swiggy", "level": "Junior (1–3 yrs)", "round": "Mixed (like a real first round)", "style": "Tough" },
+      "transcript": [
+        { "q": "Hi, I'm Priya. Tell me about the order-tracking API you built at Swiggy." },
+        { "a": "It was an internal API in FastAPI that returned the live status of an order. I built most of the endpoints and the caching layer." },
+        { "f": "What was the latency and how did you get there?" },
+        { "a": "Median response was 120 milliseconds. I added Redis caching for order status with a 5 second TTL, because status changes rarely inside that window, and that took most calls off Postgres." },
+        { "q": "How do you make sure a settlement job never pays a merchant twice?" },
+        { "a": "Each payout gets an idempotency key made from the merchant ID and settlement date. Before paying, the job checks if that key was already processed." },
+        { "f": "What if the job crashes after paying but before recording the key?" },
+        { "a": "Then you'd pay twice with that design. You'd need to record the intent first in the same transaction, or use the bank's idempotency support. I'd have to think about the exact approach." },
+        { "close": "That's all, thanks." }
+      ],
+      "expect": {
+        "overall": [30, 78],
+        "verdict_in": ["Borderline", "Hire", "Not yet"],
+        "answers": [{}, {}],
+        "anchors": ["Swiggy", "FastAPI", "Redis", "120", "Razorpay", "settlement", "idempot", "Kafka"]
+      }
+    },
+    {
+      "id": "confidently-wrong",
+      "why": "Technical content correctness: fluent but factually wrong answers must score low.",
+      "tags": ["weak", "technical"],
+      "persona": "asha",
+      "setup": { "role": "Backend Engineer", "company": "PhonePe", "level": "Junior (1–3 yrs)", "round": "Technical concepts", "style": "Neutral" },
+      "transcript": [
+        { "q": "Hi, I'm Daniel. What does a database index do, and what does it cost?" },
+        { "a": "An index makes every query faster, reads and writes, and it doesn't cost anything, so the best practice is to index every column. That's what I always do at Razorpay." },
+        { "q": "Is HTTP stateful or stateless, and why does it matter for scaling?" },
+        { "a": "HTTP is stateful because the server keeps a connection per user for the whole session. That's why you can only scale an API vertically, by getting a bigger server." },
+        { "q": "How does Kafka guarantee ordering?" },
+        { "a": "Kafka guarantees global ordering across all partitions of a topic automatically, so you never need to think about keys or partitions." },
+        { "close": "Okay, thank you, that's the end." }
+      ],
+      "expect": {
+        "overall": [0, 35],
+        "verdict_in": ["Not yet"],
+        "answers": [{ "max": 4 }, { "max": 4 }, { "max": 4 }],
+        "anchors": ["Postgres", "Kafka", "partition", "Razorpay", "settlement", "index", "stateless", "UPI"]
+      }
+    }
+  ],
+  "cross_checks": [
+    { "id": "level-calibration", "higher": "calibration-fresher-level", "lower": "calibration-senior-level", "min_gap": 8, "why": "Identical answers must score higher against a fresher bar than a senior bar." }
+  ],
+  "consistency": { "max_overall_sd": 8, "why": "Re-scoring the same interview should give nearly the same overall score." }
+}

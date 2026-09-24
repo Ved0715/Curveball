@@ -1,0 +1,53 @@
+{
+  "about": "Resume extraction eval. 'must_find' items should appear in the final profile (recall). Every item the model returns before grounding is also checked against the resume text (precision: did it invent anything?).",
+  "cases": [
+    {
+      "id": "asha-backend",
+      "why": "Standard engineering resume with clear roles, one project and several metrics.",
+      "tags": ["engineering"],
+      "resume_from_persona": "asha",
+      "must_find": {
+        "companies": ["Razorpay", "Swiggy"],
+        "projects": ["LedgerLite"],
+        "metrics": ["40%", "2M", "120 ms", "10k"],
+        "skills": ["Go", "Kafka", "Postgres"]
+      }
+    },
+    {
+      "id": "vikram-senior",
+      "why": "Senior resume with large numbers, currency and percentages.",
+      "tags": ["engineering", "senior"],
+      "resume_from_persona": "vikram",
+      "must_find": {
+        "companies": ["PhonePe", "Flipkart"],
+        "projects": [],
+        "metrics": ["45k", "32%", "99.99%", "2.1 crore"],
+        "skills": ["Java", "Kafka", "Cassandra"]
+      }
+    },
+    {
+      "id": "neha-fresher",
+      "why": "Fresher resume: internship, college project and a club role instead of full-time jobs.",
+      "tags": ["fresher", "non-engineering"],
+      "resume_from_persona": "neha",
+      "must_find": {
+        "companies": ["Zomato"],
+        "projects": [],
+        "metrics": ["18%", "22%", "4 lakh"],
+        "skills": ["Excel", "SQL", "Power BI"]
+      }
+    },
+    {
+      "id": "messy-format",
+      "why": "Inconsistent formatting, abbreviations and rupee amounts. Nothing may be invented to 'clean it up'.",
+      "tags": ["messy"],
+      "resume": "RAHUL VERMA | rahul.v@example.com | Bengaluru\nEXP\n* Freshworks - SDE2 - 2023-now: owns billing svc (Java/Spring). reduced invoice gen time 3x. handled ~1.2L invoices/month\n* Infosys - Sys Engg - 2020-23: maintained legacy .NET apps for a UK bank client, 99.5% SLA met\nPROJ: 'Splitly' expense splitter app (React Native) - 5,000+ downloads on Play Store\nEDU: BE ECE, RVCE 2020, CGPA 8.1\nSKILLS - java, spring boot, react native, mysql, jenkins",
+      "must_find": {
+        "companies": ["Freshworks", "Infosys"],
+        "projects": ["Splitly"],
+        "metrics": ["3x", "99.5%", "5,000+"],
+        "skills": ["Java", "React Native", "MySQL"]
+      }
+    }
+  ]
+}

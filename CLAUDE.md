@@ -41,6 +41,7 @@ Backend (run in `backend/`):
 - Lint: `uv run ruff check . && uv run ruff format --check .`
 - Test: `uv run pytest`
 - Migrations: `uv run alembic revision --autogenerate -m "..."`, then `uv run alembic upgrade head`; `uv run alembic check` detects drift
+- Evals (see `backend/evals/README.md`): `uv run python -m evals.run report|resume` (paid; `--mock` is free, `--list` shows cases). Run the report eval after any prompt or model change.
 
 Frontend (run in `frontend/`):
 - Dev: `npm run dev`

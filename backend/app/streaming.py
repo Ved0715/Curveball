@@ -44,11 +44,13 @@ class Tally:
     tokens_in: int = 0
     tokens_out: int = 0
     calls: int = 0
+    model: str = ""  # model that served the latest call
 
     def add(self, f: Finished) -> None:
         self.tokens_in += f.tokens_in
         self.tokens_out += f.tokens_out
         self.calls += 1
+        self.model = f.model or self.model
 
 
 async def structured[M: BaseModel](

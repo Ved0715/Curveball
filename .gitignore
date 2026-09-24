@@ -26,3 +26,6 @@ playwright-report/
 
 # Local test databases
 *.sqlite
+
+# Eval run outputs (regenerable)
+.claude/hillclimb/

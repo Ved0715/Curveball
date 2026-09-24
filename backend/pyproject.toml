@@ -39,7 +39,7 @@ ignore = ["E501"]
 python_version = "3.13"
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["app", "tests"]
+files = ["app", "tests", "evals"]
 
 [[tool.mypy.overrides]]
 module = ["docx", "docx.*"]

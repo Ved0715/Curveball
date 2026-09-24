@@ -56,9 +56,18 @@ async def _run(source: AsyncIterator[StreamEvent], tally: Tally) -> str:
 
 async def extract(resume: str, tally: Tally) -> ResumeProfile:
     """One model call (plus one retry on invalid output), then grounding."""
+    return (await extract_detailed(resume, tally))[1]
+
+
+async def extract_detailed(resume: str, tally: Tally) -> tuple[ResumeProfile, ResumeProfile, int]:
+    """Returns (model's raw profile, grounded profile, items dropped by grounding).
+
+    The eval reads the raw profile to measure how often the model invents facts;
+    the app only ever uses the grounded one."""
     s = get_settings()
     if s.ai_mock:
-        return mock_extract(resume)
+        mocked = mock_extract(resume)
+        return mocked, mocked, 0
     prompt = resume_prompt(resume, s.max_chars_resume)
     for attempt in range(2):
         text = await _run(
@@ -73,7 +82,7 @@ async def extract(resume: str, tally: Tally) -> ResumeProfile:
         grounded, dropped = ground(raw, resume)
         if dropped:
             log.info("resume grounding dropped %d ungrounded item(s)", dropped)
-        return grounded
+        return raw, grounded, dropped
     raise AIError("invalid_output")
 
 
