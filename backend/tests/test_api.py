@@ -40,7 +40,9 @@ def test_create_and_get_session(client: TestClient) -> None:
 def test_brief_is_saved_and_idempotent(client: TestClient) -> None:
     sid = create(client)
     first = client.post(f"/api/sessions/{sid}/brief").text
-    assert events(first)[0][0] == "progress"
+    names = [n for n, _ in events(first)]
+    assert names[:2] == ["stage", "stage"] and "progress" in names
+    assert [d["stage"] for n, d in events(first) if n == "stage"] == ["resume", "writing"]
     brief = result(first)
     assert len(brief["questions"]) == 8
     s = client.get(f"/api/sessions/{sid}").json()

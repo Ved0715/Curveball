@@ -80,6 +80,7 @@ class SessionOut(BaseModel):
     status: Literal["setup", "brief", "live", "done"]
     state: InterviewState
     brief: dict[str, object] | None
+    resume_profile: dict[str, object] | None
     turns: list[Turn]
     report: dict[str, object] | None
     created_at: str

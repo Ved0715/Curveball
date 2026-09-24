@@ -93,11 +93,20 @@ describe("streamReport", () => {
     };
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => sseResponse([["progress", { chars: 120 }], ["result", report]])),
+      vi.fn(async () =>
+        sseResponse([
+          ["stage", { stage: "resume" }],
+          ["stage", { stage: "scoring" }],
+          ["progress", { chars: 120 }],
+          ["result", report],
+        ]),
+      ),
     );
     const progress: number[] = [];
-    const r = await streamReport("s1", (c: number) => progress.push(c));
+    const stages: string[] = [];
+    const r = await streamReport("s1", { progress: (c) => progress.push(c), stage: (st) => stages.push(st) });
     expect(progress).toEqual([120]);
+    expect(stages).toEqual(["resume", "scoring"]);
     expect(r.scores["Role fit"]).toBe(6);
   });
 });

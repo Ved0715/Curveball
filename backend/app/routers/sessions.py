@@ -10,10 +10,10 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Any
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, BackgroundTasks, Response, status
 from sqlalchemy.exc import IntegrityError
 
-from app import llm, mock, repo
+from app import llm, mock, repo, resume_profile
 from app.config import get_settings
 from app.db import get_sessionmaker
 from app.deps import AIUser, CurrentUser, Db, ensure_ai_quota
@@ -43,8 +43,10 @@ async def _save_usage(user_id: uuid.UUID, tally: Tally) -> None:
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create(setup: Setup, db: Db, user: CurrentUser) -> SessionOut:
+async def create(setup: Setup, db: Db, user: CurrentUser, background: BackgroundTasks) -> SessionOut:
     s = await repo.create_session(db, user, setup)
+    # Read the resume now, so its profile is usually ready before any prompt needs it.
+    background.add_task(resume_profile.ensure_profile, s.id, user.id)
     return SessionOut.model_validate(repo.to_out(s))
 
 
@@ -67,17 +69,22 @@ async def brief(session_id: uuid.UUID, db: Db, user: CurrentUser) -> Any:
     await ensure_ai_quota(db, user)
     setup, user_id = repo.setup_of(s), user.id
     settings = get_settings()
+    profile: str | None = None
 
     def make(_attempt: int) -> AsyncIterator[StreamEvent]:
         if settings.ai_mock:
             return mock.mock_brief(setup)
-        return llm.stream(
-            "balanced", SYSTEM_COACH, brief_prompt(setup), settings.max_tokens_brief, schema=Brief
-        )
+        prompt = brief_prompt(setup, profile)
+        return llm.stream("balanced", SYSTEM_COACH, prompt, settings.max_tokens_brief, schema=Brief)
 
     async def gen() -> AsyncIterator[str]:
+        nonlocal profile
         tally = Tally()
         try:
+            if setup.resume.strip():
+                yield event("stage", {"stage": "resume"})
+                profile = resume_profile.as_text(await resume_profile.ensure_profile(session_id, user_id))
+            yield event("stage", {"stage": "writing"})
             async for item in structured(make, Brief, progress, tally):
                 if isinstance(item, Brief):
                     content = item.model_dump()
@@ -120,7 +127,8 @@ async def turn(session_id: uuid.UUID, body: TurnIn, db: Db, user: AIUser) -> Any
     )
     user_id = user.id
     settings = get_settings()
-    system = interviewer_system(req.setup, req.interviewer)
+    # Turns never wait for the resume profile: use it if it's ready, else the raw resume.
+    system = interviewer_system(req.setup, req.interviewer, resume_profile.as_text(s.resume_profile))
 
     def make(attempt: int) -> AsyncIterator[StreamEvent]:
         if settings.ai_mock:
@@ -178,14 +186,16 @@ async def hint(session_id: uuid.UUID, db: Db, user: AIUser) -> Any:
     if question is None or s.status == "done":
         raise AppError(409, "no_question")
     setup, user_id = repo.setup_of(s), user.id
+    profile = resume_profile.as_text(s.resume_profile)
     settings = get_settings()
 
     async def gen() -> AsyncIterator[str]:
         tally = Tally()
+        prompt = hint_prompt(setup, question, profile)
         source = (
             mock.mock_hint()
             if settings.ai_mock
-            else llm.stream("fast", SYSTEM_COACH, hint_prompt(setup, question), settings.max_tokens_hint)
+            else llm.stream("fast", SYSTEM_COACH, prompt, settings.max_tokens_hint)
         )
         try:
             async for ev in source:
@@ -226,17 +236,22 @@ async def report(session_id: uuid.UUID, db: Db, user: CurrentUser) -> Any:
     req = ReportRequest(setup=repo.setup_of(s), interviewer=s.interviewer, transcript=repo.transcript_of(s))
     user_id = user.id
     settings = get_settings()
+    profile: str | None = None
 
     def make(_attempt: int) -> AsyncIterator[StreamEvent]:
         if settings.ai_mock:
             return mock.mock_report(req.transcript)
-        return llm.stream(
-            "capable", SYSTEM_COACH, report_prompt(req), settings.max_tokens_report, schema=Report
-        )
+        prompt = report_prompt(req, profile)
+        return llm.stream("capable", SYSTEM_COACH, prompt, settings.max_tokens_report, schema=Report)
 
     async def gen() -> AsyncIterator[str]:
+        nonlocal profile
         tally = Tally()
         try:
+            if req.setup.resume.strip():
+                yield event("stage", {"stage": "resume"})
+                profile = resume_profile.as_text(await resume_profile.ensure_profile(session_id, user_id))
+            yield event("stage", {"stage": "scoring"})
             async for item in structured(make, Report, progress, tally):
                 if isinstance(item, Report):
                     content = item.model_dump(by_alias=True)

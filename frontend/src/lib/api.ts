@@ -142,14 +142,16 @@ export const deleteSession = (id: string) => requestEmpty(s(id), { method: "DELE
 
 export const endSession = (id: string) => requestJSON<Session>(`${s(id)}/end`, { method: "POST" }, SessionSchema);
 
-export function streamBrief(id: string, onProgress: (chars: number) => void, signal?: AbortSignal) {
-  return postStream<Brief>(
-    `${s(id)}/brief`,
-    {},
-    BriefSchema,
-    { progress: (d) => onProgress((d as { chars: number }).chars) },
-    signal,
-  );
+/** Progress callbacks for long AI tasks: characters written so far, and the current step. */
+export type TaskProgress = { progress: (chars: number) => void; stage: (stage: string) => void };
+
+const progressHandlers = (on: TaskProgress): Handlers => ({
+  progress: (d) => on.progress((d as { chars: number }).chars),
+  stage: (d) => on.stage((d as { stage: string }).stage),
+});
+
+export function streamBrief(id: string, on: TaskProgress, signal?: AbortSignal) {
+  return postStream<Brief>(`${s(id)}/brief`, {}, BriefSchema, progressHandlers(on), signal);
 }
 
 export function streamTurn(
@@ -178,14 +180,8 @@ export async function streamHint(id: string, onDelta: (text: string) => void, si
   return r.text;
 }
 
-export function streamReport(id: string, onProgress: (chars: number) => void, signal?: AbortSignal) {
-  return postStream<Report>(
-    `${s(id)}/report`,
-    {},
-    ReportSchema,
-    { progress: (d) => onProgress((d as { chars: number }).chars) },
-    signal,
-  );
+export function streamReport(id: string, on: TaskProgress, signal?: AbortSignal) {
+  return postStream<Report>(`${s(id)}/report`, {}, ReportSchema, progressHandlers(on), signal);
 }
 
 /* ---------- History & account ---------- */

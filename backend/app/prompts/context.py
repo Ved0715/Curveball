@@ -9,18 +9,30 @@ def clip(text: str, limit: int) -> str:
     return text[:limit] + "\n[…trimmed]" if len(text) > limit else text
 
 
-def setup_context(setup: Setup) -> str:
+def setup_context(setup: Setup, profile: str | None = None, raw_resume: bool = True) -> str:
+    """The candidate's context for a prompt.
+
+    `profile` is the structured resume profile (see prompts/resume.py). Calls that need
+    every detail (brief, report) get the profile *and* the raw resume; latency-sensitive
+    calls (interviewer, hint) get only the compact profile when it exists.
+    """
     s = get_settings()
-    return f"""ROLE: {setup.role}
+    parts = [
+        f"""ROLE: {setup.role}
 COMPANY: {setup.company or "(not specified)"}
 EXPERIENCE LEVEL: {setup.level}
 INTERVIEW ROUND: {setup.round}
 
 JOB DESCRIPTION:
-{clip(setup.jd, s.max_chars_jd) or "(not provided)"}
-
-CANDIDATE RESUME:
-{clip(setup.resume, s.max_chars_resume) or "(not provided)"}"""
+{clip(setup.jd, s.max_chars_jd) or "(not provided)"}"""
+    ]
+    if profile:
+        parts.append(
+            f"CANDIDATE PROFILE (extracted from their resume; every fact is from the resume):\n{profile}"
+        )
+    if raw_resume or not profile:
+        parts.append(f"CANDIDATE RESUME:\n{clip(setup.resume, s.max_chars_resume) or '(not provided)'}")
+    return "\n\n".join(parts)
 
 
 def transcript_text(transcript: list[Turn]) -> str:

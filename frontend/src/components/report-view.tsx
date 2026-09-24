@@ -73,7 +73,7 @@ export function ReportView({
 }) {
   const tone = toneFor(report.overall, 100);
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-1 gap-5">
       <Confetti fire={celebrate && report.overall >= 75} />
       <Card className="relative overflow-hidden p-6 sm:p-10">
         <div

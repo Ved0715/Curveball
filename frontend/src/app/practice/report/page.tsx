@@ -24,7 +24,7 @@ function ReportFlow({ session }: { session: Session }) {
   const [again, setAgain] = useState<{ busy: boolean; error?: string }>({ busy: false });
 
   const { state, run, stop } = useStreamTask(
-    (signal, onProgress) => streamReport(session.id, onProgress, signal),
+    (signal, on) => streamReport(session.id, on, signal),
     (report) => {
       patchSession((s) => ({ ...s, report }));
       setFresh(true);
@@ -120,6 +120,15 @@ function ReportFlow({ session }: { session: Session }) {
         "Writing stronger answers in your voice…",
       ]}
       percent={state.status === "running" ? streamPercent(state.chars, 7000) : null}
+      steps={
+        session.setup.resume.trim()
+          ? [
+              { key: "resume", label: "Check your resume", active: "Re-reading your resume…" },
+              { key: "scoring", label: "Score every answer", active: "Scoring your answers…" },
+            ]
+          : undefined
+      }
+      stage={state.status === "running" ? state.stage : null}
       onStop={stop}
     />
   );

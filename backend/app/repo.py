@@ -113,6 +113,7 @@ def to_out(s: InterviewSession) -> dict[str, Any]:
         "status": s.status,
         "state": state_of(s).model_dump(),
         "brief": s.brief.content if s.brief else None,
+        "resume_profile": s.resume_profile,
         "turns": [t.model_dump(exclude_none=True) for t in transcript_of(s)],
         "report": s.report.content if s.report else None,
         "created_at": iso(s.created_at),

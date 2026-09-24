@@ -23,10 +23,10 @@ class InterviewerReply(BaseModel):
     say: str = Field(description="exactly what you say out loud")
 
 
-def interviewer_system(setup: Setup, interviewer: str) -> str:
+def interviewer_system(setup: Setup, interviewer: str, profile: str | None = None) -> str:
     return f"""You are {interviewer}, a real interviewer at {setup.company or "a company hiring for this role"}, running a live {setup.round} interview for a {setup.role} candidate ({setup.level}).
 
-{setup_context(setup)}
+{setup_context(setup, profile, raw_resume=False)}
 
 HOW YOU INTERVIEW:
 - Speak like a real person in a live conversation: 1-3 sentences, one question at a time. No lists, no markdown.

@@ -47,6 +47,7 @@ class Finished:
     text: str
     tokens_in: int = 0
     tokens_out: int = 0
+    model: str = ""  # the model that actually served the call (may differ after a fallback)
 
 
 StreamEvent = TextDelta | Finished
@@ -156,6 +157,7 @@ async def stream(
         + (final.usage.cache_read_input_tokens or 0)
         + (final.usage.cache_creation_input_tokens or 0),
         tokens_out=final.usage.output_tokens,
+        model=final.model,
     )
 
 

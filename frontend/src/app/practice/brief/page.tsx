@@ -7,13 +7,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { PageTitle } from "@/components/page-shell";
 import { SessionGate } from "@/components/session-gate";
+import { ResumeProfileCard } from "@/components/resume-profile";
 import { Reveal } from "@/components/reveal";
 import { ErrorPanel, StreamingPanel } from "@/components/status";
 import { Button, Card, Chip, Eyebrow } from "@/components/ui";
-import { streamBrief } from "@/lib/api";
+import { getSession, streamBrief } from "@/lib/api";
 import { friendlyError } from "@/lib/errors";
 import { shortRound, streamPercent } from "@/lib/format";
-import type { Brief, Session, Setup } from "@/lib/schemas";
+import type { Brief, Session } from "@/lib/schemas";
 import { useStore } from "@/lib/store";
 import { useStreamTask } from "@/lib/use-task";
 
@@ -74,7 +75,8 @@ function QuestionCard({ n, q }: { n: number; q: Brief["questions"][number] }) {
   );
 }
 
-function BriefView({ brief, setup, onStart }: { brief: Brief; setup: Setup; onStart: () => void }) {
+function BriefView({ session, brief, onStart }: { session: Session; brief: Brief; onStart: () => void }) {
+  const setup = session.setup;
   return (
     <>
       <PageTitle
@@ -91,7 +93,8 @@ function BriefView({ brief, setup, onStart }: { brief: Brief; setup: Setup; onSt
         </Button>
       </PageTitle>
 
-      <div className="grid gap-5">
+      <div className="grid grid-cols-1 gap-5">
+        <ResumeProfileCard profile={session.resume_profile} hasResume={!!setup.resume.trim()} />
         <Section title={setup.company || "The company"} eyebrow="Company">
           <p className="max-w-3xl">{brief.company.summary}</p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -197,9 +200,14 @@ function BriefView({ brief, setup, onStart }: { brief: Brief; setup: Setup; onSt
 function BriefFlow({ session }: { session: Session }) {
   const router = useRouter();
   const patchSession = useStore((s) => s.patchSession);
+  const openSession = useStore((s) => s.openSession);
   const { state, run, stop } = useStreamTask(
-    (signal, onProgress) => streamBrief(session.id, onProgress, signal),
-    (brief) => patchSession((s) => ({ ...s, brief, status: s.status === "setup" ? "brief" : s.status })),
+    (signal, on) => streamBrief(session.id, on, signal),
+    (brief) => {
+      patchSession((s) => ({ ...s, brief, status: s.status === "setup" ? "brief" : s.status }));
+      // The resume profile was finished on the server while the brief was written; pick it up.
+      getSession(session.id).then(openSession, () => {});
+    },
   );
 
   useEffect(() => {
@@ -208,7 +216,7 @@ function BriefFlow({ session }: { session: Session }) {
 
   const begin = () => router.push("/practice/interview");
 
-  if (session.brief) return <BriefView brief={session.brief} setup={session.setup} onStart={begin} />;
+  if (session.brief) return <BriefView session={session} brief={session.brief} onStart={begin} />;
 
   if (state.status === "error" || state.status === "stopped")
     return (
@@ -239,6 +247,15 @@ function BriefFlow({ session }: { session: Session }) {
         "Finding your best stories…",
       ]}
       percent={state.status === "running" ? streamPercent(state.chars, 5500) : null}
+      steps={
+        session.setup.resume.trim()
+          ? [
+              { key: "resume", label: "Read your resume", active: "Reading your resume…" },
+              { key: "writing", label: "Write your brief", active: "Writing your brief…" },
+            ]
+          : undefined
+      }
+      stage={state.status === "running" ? state.stage : null}
       onStop={stop}
     />
   );

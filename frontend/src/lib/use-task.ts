@@ -1,17 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { TaskProgress } from "./api";
 import { ApiError, toApiError } from "./errors";
 
 export type TaskState =
   | { status: "idle" }
-  | { status: "running"; chars: number }
+  | { status: "running"; chars: number; stage: string | null }
   | { status: "stopped" }
   | { status: "error"; error: ApiError };
 
-/** Runs one streaming AI call with progress, stop and retry. Only one run at a time. */
+/** Runs one streaming AI call with progress, stage, stop and retry. Only one run at a time. */
 export function useStreamTask<T>(
-  task: (signal: AbortSignal, onProgress: (chars: number) => void) => Promise<T>,
+  task: (signal: AbortSignal, on: TaskProgress) => Promise<T>,
   onDone: (result: T) => void,
 ) {
   const [state, setState] = useState<TaskState>({ status: "idle" });
@@ -25,9 +26,13 @@ export function useStreamTask<T>(
     if (ctl.current) return;
     const c = new AbortController();
     ctl.current = c;
-    setState({ status: "running", chars: 0 });
+    setState({ status: "running", chars: 0, stage: null });
+    const on: TaskProgress = {
+      progress: (chars) => setState((st) => ({ status: "running", chars, stage: st.status === "running" ? st.stage : null })),
+      stage: (stage) => setState((st) => ({ status: "running", chars: st.status === "running" ? st.chars : 0, stage })),
+    };
     try {
-      const result = await latest.current.task(c.signal, (chars) => setState({ status: "running", chars }));
+      const result = await latest.current.task(c.signal, on);
       setState({ status: "idle" });
       latest.current.onDone(result);
     } catch (err) {

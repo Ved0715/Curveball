@@ -68,7 +68,10 @@ class Profile(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     resume_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
-    resume_structured: Mapped[dict[str, Any] | None] = mapped_column(JsonB)  # Phase 3
+    # Structured profile of the latest resume, and a hash of the text it came from, so an
+    # unchanged resume is never re-extracted.
+    resume_structured: Mapped[dict[str, Any] | None] = mapped_column(JsonB)
+    resume_hash: Mapped[str | None] = mapped_column(String(64))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
@@ -91,6 +94,7 @@ class InterviewSession(Base):
     question_count: Mapped[int] = mapped_column(Integer)
     jd_text: Mapped[str] = mapped_column(Text, default="")
     resume_text: Mapped[str] = mapped_column(Text, default="")  # snapshot used for this interview
+    resume_profile: Mapped[dict[str, Any] | None] = mapped_column(JsonB)  # extracted from resume_text
     interviewer: Mapped[str] = mapped_column(String(40))
     # setup → brief → live → done
     status: Mapped[str] = mapped_column(String(10), default="setup")

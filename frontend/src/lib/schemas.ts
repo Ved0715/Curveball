@@ -118,6 +118,20 @@ export const ReportSchema = z.object({
 });
 export type Report = z.infer<typeof ReportSchema>;
 
+/* What the server read from the resume (every fact is grounded in the resume text) */
+export const ResumeProfileSchema = z.object({
+  headline: z.string(),
+  years_experience: z.number().nullable(),
+  experience: z.array(
+    z.object({ company: z.string(), title: z.string(), period: z.string(), highlights: z.array(z.string()) }),
+  ),
+  projects: z.array(z.object({ name: z.string(), summary: z.string(), tech: z.array(z.string()), impact: z.string() })),
+  skills: z.array(z.string()),
+  metrics: z.array(z.object({ value: z.string(), context: z.string() })),
+  education: z.array(z.string()),
+});
+export type ResumeProfile = z.infer<typeof ResumeProfileSchema>;
+
 /* Server resources */
 export const SessionSchema = z.object({
   id: z.string(),
@@ -126,6 +140,7 @@ export const SessionSchema = z.object({
   status: z.enum(["setup", "brief", "live", "done"]),
   state: InterviewStateSchema,
   brief: BriefSchema.nullable(),
+  resume_profile: ResumeProfileSchema.nullable(),
   turns: z.array(TurnSchema),
   report: ReportSchema.nullable(),
   created_at: z.string(),

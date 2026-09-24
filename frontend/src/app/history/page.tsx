@@ -105,7 +105,7 @@ export default function HistoryPage() {
           </Link>
         </Card>
       ) : (
-        <div className="grid gap-5">
+        <div className="grid grid-cols-1 gap-5">
           <div className="grid gap-4 sm:grid-cols-3">
             {[
               ["Interviews", String(items.length)],

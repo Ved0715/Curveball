@@ -70,10 +70,10 @@ class Report(BaseModel):
         return _clamp(v, 0, 100)
 
 
-def report_prompt(req: ReportRequest) -> str:
+def report_prompt(req: ReportRequest, profile: str | None = None) -> str:
     return f"""You are a senior hiring manager and interview coach. Evaluate this mock interview honestly, like a real bar-raiser, not a cheerleader. Judge against the expectations for the stated experience level.
 
-{setup_context(req.setup)}
+{setup_context(req.setup, profile)}
 
 INTERVIEW TRANSCRIPT (the interviewer was {req.interviewer}):
 {clip_transcript(req.transcript)}

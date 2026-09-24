@@ -47,10 +47,10 @@ class Brief(BaseModel):
     askThem: list[str] = Field(description="sharp questions the candidate can ask the interviewer")
 
 
-def brief_prompt(setup: Setup) -> str:
+def brief_prompt(setup: Setup, profile: str | None = None) -> str:
     return f"""You are an elite interview coach who has sat on hundreds of hiring panels. Build a focused, specific prep brief for this candidate. No generic filler: every point must tie to this role, this company and this candidate's actual resume.
 
-{setup_context(setup)}
+{setup_context(setup, profile)}
 
 Give 3-4 strengths, 2-3 gaps, 8 questions matched to the "{setup.round}" round, 4 stories and 4 askThem.
 The company summary comes from your general knowledge; set confidence to reflect how sure you are.

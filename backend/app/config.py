@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     max_ai_calls_per_day: int = 150
 
     # Output caps per call, to bound cost and latency.
+    max_tokens_resume: int = 3000
     max_tokens_brief: int = 8000
     max_tokens_turn: int = 600
     max_tokens_hint: int = 400
