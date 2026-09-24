@@ -22,12 +22,17 @@ class Settings(BaseSettings):
     # Comma-separated list of frontend origins allowed to call this API.
     cors_origins: str = "http://localhost:3000"
 
-    # Postgres connection string. Unused until Phase 2 (accounts + persistence).
+    # Postgres connection string (Neon). Schema is managed by Alembic migrations.
     database_url: str | None = None
+    # Only for throwaway SQLite databases in tests / e2e: create tables at startup.
+    db_auto_create: bool = False
 
     model_fast: str = "claude-haiku-4-5"
     model_balanced: str = "claude-sonnet-5"
     model_capable: str = "claude-opus-5"
+
+    # Per-user daily cap on AI calls (cost control). A full 10-question interview is ~25 calls.
+    max_ai_calls_per_day: int = 150
 
     # Output caps per call, to bound cost and latency.
     max_tokens_brief: int = 8000

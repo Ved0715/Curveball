@@ -45,6 +45,8 @@ class TextDelta:
 @dataclass(frozen=True)
 class Finished:
     text: str
+    tokens_in: int = 0
+    tokens_out: int = 0
 
 
 StreamEvent = TextDelta | Finished
@@ -148,7 +150,13 @@ async def stream(
             parts = []  # a model declined mid-stream; only the rescuing model's text counts
         elif block.type == "text":
             parts.append(block.text)
-    yield Finished("".join(parts))
+    yield Finished(
+        "".join(parts),
+        tokens_in=final.usage.input_tokens
+        + (final.usage.cache_read_input_tokens or 0)
+        + (final.usage.cache_creation_input_tokens or 0),
+        tokens_out=final.usage.output_tokens,
+    )
 
 
 def validate[M: BaseModel](schema: type[M], text: str) -> M:

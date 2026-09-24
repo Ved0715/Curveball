@@ -57,12 +57,42 @@ class TurnRequest(BaseModel):
     state: InterviewState = Field(default_factory=InterviewState)
 
 
-class HintRequest(BaseModel):
-    setup: Setup
-    question: str = Field(min_length=1, max_length=4000)
-
-
 class ReportRequest(BaseModel):
     setup: Setup
     interviewer: str = Field(min_length=1, max_length=40)
     transcript: list[Turn] = Field(min_length=1, max_length=80)
+
+
+# ---------- Session API ----------
+
+
+class TurnIn(BaseModel):
+    """Candidate's answer to the last question. Omit `answer` to (re)request the interviewer's turn."""
+
+    answer: str | None = Field(default=None, max_length=20000)
+    answer_seconds: int | None = Field(default=None, ge=0, le=36000)
+
+
+class SessionOut(BaseModel):
+    id: str
+    setup: Setup
+    interviewer: str
+    status: Literal["setup", "brief", "live", "done"]
+    state: InterviewState
+    brief: dict[str, object] | None
+    turns: list[Turn]
+    report: dict[str, object] | None
+    created_at: str
+
+
+class HistoryItem(BaseModel):
+    id: str
+    role: str
+    company: str
+    round: str
+    level: str
+    style: str
+    interviewer: str
+    date: str
+    overall: int
+    verdict: str
