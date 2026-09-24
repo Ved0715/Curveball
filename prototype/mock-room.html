@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mock Room: AI interview practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E7ECF2; --paper:#F9FBFD; --ink:#14213A; --muted:#58657A; --line:#C8D1DC; --soft:#DCE3EC;
+  --accent:#B86E0C; --accent-soft:#FBEBD2; --good:#23724F; --good-soft:#DDF0E6; --bad:#AD3F2A; --bad-soft:#F7E1DB;
+  --focus:#2D5BCB; --btn-ink:#F9FBFD;
+  --serif:"Newsreader", Georgia, "Times New Roman", serif;
+  --sans:"Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1622; --paper:#152032; --ink:#E5EBF3; --muted:#94A1B4; --line:#2A3850; --soft:#1C2A3F;
+    --accent:#F0A640; --accent-soft:#3A2A12; --good:#5CC193; --good-soft:#15352A; --bad:#EC7B63; --bad-soft:#3D1E18;
+    --focus:#7FA2FF; --btn-ink:#0E1622;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1622; --paper:#152032; --ink:#E5EBF3; --muted:#94A1B4; --line:#2A3850; --soft:#1C2A3F;
+  --accent:#F0A640; --accent-soft:#3A2A12; --good:#5CC193; --good-soft:#15352A; --bad:#EC7B63; --bad-soft:#3D1E18;
+  --focus:#7FA2FF; --btn-ink:#0E1622;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+[hidden]{display:none!important}
+
+.wrap{max-width:760px;margin:0 auto;padding:0 20px 64px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:22px 0 18px;border-bottom:1px solid var(--line);margin-bottom:28px}
+.brand{font-family:var(--serif);font-size:1.6rem;font-weight:500;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+nav.steps{display:flex;gap:4px;flex-wrap:wrap}
+nav.steps button{border:0;background:transparent;padding:6px 10px;border-radius:8px;font-size:.88rem;color:var(--muted);cursor:pointer}
+nav.steps button[aria-current="true"]{background:var(--paper);color:var(--ink);font-weight:600}
+nav.steps button:disabled{opacity:.4;cursor:default}
+
+h1{font-family:var(--serif);font-weight:500;font-size:clamp(1.9rem,5vw,2.6rem);line-height:1.12;letter-spacing:-.015em;margin:0 0 10px}
+h2{font-family:var(--serif);font-weight:500;font-size:1.45rem;margin:0 0 12px;line-height:1.25}
+h3{font-size:1rem;font-weight:700;margin:0 0 6px}
+p.lede{color:var(--muted);margin:0 0 28px;max-width:60ch}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:620px){.grid{grid-template-columns:1fr}}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92rem}
+label.f .hint{font-weight:400;color:var(--muted);font-size:.84rem}
+input[type=text],select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-weight:400;font-size:.97rem}
+textarea{resize:vertical;min-height:120px;line-height:1.5}
+.span2{grid-column:1/-1}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:inline-block;padding:8px 14px;border:1px solid var(--line);border-radius:999px;font-weight:500;font-size:.9rem;cursor:pointer;background:var(--bg)}
+.seg input:checked+span{background:var(--ink);color:var(--btn-ink);border-color:var(--ink)}
+.seg input:focus-visible+span{outline:2px solid var(--focus);outline-offset:2px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--ink);background:var(--ink);color:var(--btn-ink);padding:11px 18px;border-radius:10px;font-weight:600;cursor:pointer;font-size:.95rem}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.warn{background:transparent;color:var(--bad);border-color:var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.filebtn{font-size:.86rem;font-weight:600;color:var(--focus);cursor:pointer;background:none;border:0;padding:0;text-decoration:underline;text-underline-offset:3px}
+.note{padding:12px 14px;border-radius:10px;background:var(--accent-soft);font-size:.9rem;margin-bottom:18px}
+.err{padding:12px 14px;border-radius:10px;background:var(--bad-soft);color:var(--ink);font-size:.92rem;margin-top:14px}
+.status{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.93rem}
+.pulse{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+
+/* Brief */
+.bsec{padding:22px 0;border-top:1px solid var(--line)}
+.bsec:first-of-type{border-top:0;padding-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:5px 12px;border-radius:999px;background:var(--soft);font-size:.88rem;font-weight:500}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:620px){.two{grid-template-columns:1fr}}
+ul.clean{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
+.mark{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.qlist{counter-reset:q;list-style:none;padding:0;margin:0}
+.qlist li{counter-increment:q;padding:14px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:32px 1fr;gap:4px 10px}
+.qlist li:first-child{border-top:0}
+.qlist li::before{content:counter(q);font-family:var(--serif);font-size:1.25rem;color:var(--accent);line-height:1.3}
+.qlist .q{font-family:var(--serif);font-size:1.13rem;line-height:1.35}
+.qlist .meta{grid-column:2;font-size:.9rem;color:var(--muted)}
+
+/* Room */
+.roombar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:26px;font-size:.9rem}
+.live{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.live .pulse{background:var(--bad)}
+.progress{height:4px;background:var(--soft);border-radius:4px;overflow:hidden;margin-bottom:30px}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .4s ease}
+.speaker{font-size:.9rem;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--btn-ink);display:grid;place-items:center;font-family:var(--serif);font-size:1rem}
+.question{font-family:var(--serif);font-weight:500;font-size:clamp(1.55rem,4.2vw,2.25rem);line-height:1.25;letter-spacing:-.01em;margin:0 0 26px;max-width:32ch;min-height:2.5em}
+.question.dim{opacity:.35}
+.hintbox{border-left:3px solid var(--accent);padding:4px 0 4px 14px;margin:-8px 0 22px;color:var(--muted);font-size:.93rem;white-space:pre-wrap}
+.answer textarea{min-height:150px;background:var(--paper);font-size:1.02rem}
+.answer .row{justify-content:space-between;margin-top:10px}
+.mic[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+.timer{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem}
+details.tx{margin-top:34px;border-top:1px solid var(--line);padding-top:16px}
+details.tx summary{cursor:pointer;font-weight:600;font-size:.92rem}
+.turn{padding:12px 0;border-bottom:1px solid var(--line);font-size:.95rem}
+.turn b{display:block;font-size:.8rem;color:var(--muted);font-weight:600;margin-bottom:2px}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;color:var(--muted);cursor:pointer}
+
+/* Report */
+.scorehead{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;margin-bottom:26px}
+@media (max-width:520px){.scorehead{grid-template-columns:1fr}}
+.big{font-family:var(--serif);font-size:4.6rem;line-height:.9;font-weight:500;letter-spacing:-.03em}
+.big small{font-size:1.2rem;color:var(--muted);letter-spacing:0}
+.verdict{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:.85rem;margin-bottom:8px}
+.bars{display:grid;grid-template-columns:120px 1fr 28px;gap:8px 12px;align-items:center;font-size:.9rem}
+.bar{height:8px;background:var(--soft);border-radius:8px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:8px}
+details.ans{border-top:1px solid var(--line);padding:14px 0}
+details.ans summary{cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:baseline;list-style:none}
+details.ans summary::-webkit-details-marker{display:none}
+details.ans summary .q{font-family:var(--serif);font-size:1.1rem;line-height:1.35}
+.pill{font-weight:700;font-size:.85rem;padding:2px 10px;border-radius:999px;white-space:nowrap}
+.ansbody{display:grid;gap:12px;margin-top:12px;font-size:.95rem}
+.better{background:var(--bg);border-radius:10px;padding:14px 16px;font-family:var(--serif);font-size:1.05rem;line-height:1.55}
+
+/* History */
+.hist{list-style:none;padding:0;margin:0}
+.hist li{display:grid;grid-template-columns:1fr auto;gap:10px;padding:14px 0;border-top:1px solid var(--line);align-items:center}
+.hist button.open{background:none;border:0;text-align:left;padding:0;cursor:pointer}
+.trend{width:100%;height:90px;margin:8px 0 18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="dot" aria-hidden="true"></span>Mock Room</div>
+    <nav class="steps" aria-label="Sections">
+      <button data-go="setup">1. Set up</button>
+      <button data-go="brief" disabled>2. Prep brief</button>
+      <button data-go="room" disabled>3. Interview</button>
+      <button data-go="report" disabled>4. Report</button>
+      <button data-go="history">History</button>
+    </nav>
+  </header>
+
+  <div id="noai" class="note" hidden>The AI interviewer runs through your Claude account, so it only works when this page is open inside Claude. Open the published link while signed in, and allow access when asked.</div>
+
+  <!-- SETUP -->
+  <section id="v-setup">
+    <h1>Practice the interview before it counts.</h1>
+    <p class="lede">Tell me the role and paste the job description and your resume. You'll get a prep brief built from them, then a live mock interview that asks follow-ups the way a real interviewer does, then an honest scored report.</p>
+
+    <div class="panel">
+      <div class="grid">
+        <label class="f">Role
+          <input type="text" id="f-role" placeholder="e.g. Backend Engineer, Product Analyst" autocomplete="off">
+        </label>
+        <label class="f">Company <span class="hint">Optional</span>
+          <input type="text" id="f-company" placeholder="e.g. Flipkart, Razorpay, Google" autocomplete="off">
+        </label>
+        <label class="f">Experience level
+          <select id="f-level">
+            <option>Intern / fresher</option>
+            <option selected>Junior (1–3 yrs)</option>
+            <option>Mid-level (3–6 yrs)</option>
+            <option>Senior (6+ yrs)</option>
+            <option>Lead / manager</option>
+          </select>
+        </label>
+        <label class="f">Interview round
+          <select id="f-round">
+            <option>Mixed (like a real first round)</option>
+            <option>Behavioral</option>
+            <option>Technical concepts</option>
+            <option>Coding (talk through your approach)</option>
+            <option>System design</option>
+            <option>HR and culture fit</option>
+            <option>Product sense / case</option>
+          </select>
+        </label>
+        <div class="f span2" role="group" aria-labelledby="lbl-style">
+          <span id="lbl-style" style="font-weight:600;font-size:.92rem">Interviewer style</span>
+          <div class="seg" id="f-style">
+            <label><input type="radio" name="style" value="Friendly"><span>Friendly</span></label>
+            <label><input type="radio" name="style" value="Neutral"><span>Neutral</span></label>
+            <label><input type="radio" name="style" value="Tough"><span>Tough</span></label>
+          </div>
+        </div>
+        <div class="f span2" role="group" aria-labelledby="lbl-count">
+          <span id="lbl-count" style="font-weight:600;font-size:.92rem">Length</span>
+          <div class="seg" id="f-count">
+            <label><input type="radio" name="count" value="4"><span>Quick, 4 questions</span></label>
+            <label><input type="radio" name="count" value="7"><span>Standard, 7 questions</span></label>
+            <label><input type="radio" name="count" value="10"><span>Full round, 10 questions</span></label>
+          </div>
+        </div>
+        <label class="f span2">Job description <span class="hint">Paste the posting. The more detail, the sharper the questions.</span>
+          <textarea id="f-jd" placeholder="Paste the job description here"></textarea>
+        </label>
+        <div class="f span2">
+          <label for="f-resume" style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <span>Your resume <span class="hint" style="font-weight:400">Paste it, or upload a PDF, DOCX or TXT</span></span>
+            <button type="button" class="filebtn" id="uploadBtn">Upload file</button>
+          </label>
+          <input type="file" id="file" accept=".pdf,.docx,.txt,.md" hidden>
+          <textarea id="f-resume" placeholder="Paste your resume text here"></textarea>
+          <span class="small muted" id="fileStatus" aria-live="polite"></span>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnBrief">Build my prep brief</button>
+        <button class="btn ghost" id="btnStart">Skip to interview</button>
+      </div>
+      <div class="err" id="setupErr" hidden></div>
+    </div>
+  </section>
+
+  <!-- BRIEF -->
+  <section id="v-brief" hidden>
+    <div id="briefLoading" hidden>
+      <h1>Building your prep brief</h1>
+      <p class="lede">Reading the job description and your resume, then working out what they'll test and how you match. This usually takes 20 to 60 seconds.</p>
+      <div class="row"><div class="status"><span class="pulse"></span><span id="briefStatus">Thinking…</span></div><button class="btn ghost" id="briefStop">Stop</button></div>
+    </div>
+    <div id="briefErr" class="err" hidden></div>
+    <div id="briefBody"></div>
+  </section>
+
+  <!-- ROOM -->
+  <section id="v-room" hidden>
+    <div class="roombar">
+      <span class="live" id="liveTag"><span class="pulse"></span><span id="qCounter">Starting</span></span>
+      <div class="row">
+        <label class="toggle"><input type="checkbox" id="speakToggle"> Read questions aloud</label>
+        <button class="btn warn" id="btnEnd" style="padding:7px 12px;font-size:.86rem">End interview</button>
+      </div>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="progBar"></i></div>
+
+    <div class="speaker"><span class="avatar" id="avatar">·</span><span id="speakerName"></span></div>
+    <p class="question" id="question" aria-live="polite"></p>
+    <div class="hintbox" id="hintBox" hidden></div>
+    <div id="roomStatus" class="status" hidden><span class="pulse"></span><span id="roomStatusText"></span></div>
+    <div class="err" id="roomErr" hidden></div>
+
+    <div class="answer" id="answerBox">
+      <label for="answer" class="small muted" style="display:block;margin-bottom:6px">Your answer <span class="timer" id="timer"></span></label>
+      <textarea id="answer" placeholder="Answer as you would out loud. Ctrl + Enter to send."></textarea>
+      <div class="row">
+        <div class="row">
+          <button class="btn ghost mic" id="btnMic" aria-pressed="false" hidden>Speak</button>
+          <button class="btn ghost" id="btnHint">I'm stuck, give me a nudge</button>
+        </div>
+        <button class="btn" id="btnSend">Send answer</button>
+      </div>
+      <span class="small muted" id="micNote" aria-live="polite"></span>
+    </div>
+
+    <div id="doneBox" hidden>
+      <div class="actions"><button class="btn" id="btnReport">Get my report</button></div>
+    </div>
+
+    <details class="tx" id="txBox"><summary>Transcript</summary><div id="txList"></div></details>
+  </section>
+
+  <!-- REPORT -->
+  <section id="v-report" hidden>
+    <div id="repLoading" hidden>
+      <h1>Scoring your interview</h1>
+      <p class="lede">Reviewing every answer the way a hiring manager would, and writing stronger versions using your own experience.</p>
+      <div class="row"><div class="status"><span class="pulse"></span><span id="repStatus">Thinking…</span></div><button class="btn ghost" id="repStop">Stop</button></div>
+    </div>
+    <div id="repErr" class="err" hidden></div>
+    <div id="repBody"></div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="v-history" hidden>
+    <h1>Your practice history</h1>
+    <p class="lede">Every finished interview is saved in this browser so you can watch your scores move.</p>
+    <div id="histBody"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const clip = (s, n) => { s = String(s || "").trim(); return s.length > n ? s.slice(0, n) + "\n[…trimmed]" : s; };
+
+/* ---------- Claude access ---------- */
+const samplePromise = (window.claude && typeof window.claude.use === "function")
+  ? window.claude.use("sample").catch(() => null)
+  : Promise.resolve(null);
+samplePromise.then(s => { if(!s) $("#noai").hidden = false; });
+
+async function askJSON(prompt, opts){
+  const s = await samplePromise;
+  if(!s) throw {code:"not_granted"};
+  return s.json(prompt, opts || {});
+}
+async function askText(prompt, opts){
+  const s = await samplePromise;
+  if(!s) throw {code:"not_granted"};
+  const r = await s(prompt, opts || {});
+  return r.text;
+}
+function copyFor(e){
+  const c = e && e.code;
+  switch(c){
+    case "cancelled": return "";
+    case "not_granted": case "sampling_disabled": case "not_declared": case "capability_disabled": case "capability_removed":
+      return "The AI isn't available on this page. Open it inside Claude and allow access when asked.";
+    case "rate_limited": return "You've hit a usage limit. Wait a little, then try again.";
+    case "session_expired": return "Your Claude session expired. Sign in again, then retry.";
+    case "prompt_too_large": return "The resume or job description is too long. Trim it and try again.";
+    case "refused": return "Claude declined that request. Rephrase and try again.";
+    default: return "The response didn't come through. Try again.";
+  }
+}
+
+/* ---------- State ---------- */
+const defaults = {role:"",company:"",level:"Junior (1–3 yrs)",round:"Mixed (like a real first round)",count:"7",style:"Neutral",jd:"",resume:""};
+const S = {
+  setup: Object.assign({}, defaults, store.get("mr.setup", {})),
+  brief: null, tr: [], k: 0, fu: false, done: false, busy: false, report: null, iv: "", ivStyle: ""
+};
+const NAMES = ["Priya","Daniel","Meera","Arjun","Sofia","Rahul","Hannah","Kabir"];
+
+/* ---------- Views ---------- */
+const VIEWS = ["setup","brief","room","report","history"];
+function show(v){
+  VIEWS.forEach(n => { $("#v-"+n).hidden = n !== v; });
+  document.querySelectorAll("nav.steps button").forEach(b => b.setAttribute("aria-current", String(b.dataset.go === v)));
+  if(v === "history") renderHistory();
+  window.scrollTo({top:0});
+}
+function refreshNav(){
+  const on = {brief: !!S.brief, room: S.tr.length > 0, report: !!S.report};
+  document.querySelectorAll("nav.steps button").forEach(b => { if(b.dataset.go in on) b.disabled = !on[b.dataset.go]; });
+}
+document.querySelectorAll("nav.steps button").forEach(b => b.addEventListener("click", () => show(b.dataset.go)));
+
+/* ---------- Setup form ---------- */
+const F = {role:"#f-role",company:"#f-company",level:"#f-level",round:"#f-round",jd:"#f-jd",resume:"#f-resume"};
+Object.entries(F).forEach(([k, sel]) => {
+  const el = $(sel); el.value = S.setup[k] || el.value;
+  el.addEventListener("input", () => { S.setup[k] = el.value; store.set("mr.setup", S.setup); });
+});
+["style","count"].forEach(k => {
+  document.querySelectorAll(`input[name=${k}]`).forEach(r => {
+    r.checked = r.value === S.setup[k];
+    r.addEventListener("change", () => { if(r.checked){ S.setup[k] = r.value; store.set("mr.setup", S.setup); } });
+  });
+  if(!document.querySelector(`input[name=${k}]:checked`)) document.querySelectorAll(`input[name=${k}]`)[1].checked = true;
+});
+
+function validate(){
+  const err = $("#setupErr");
+  if(!S.setup.role.trim()){ err.textContent = "Add the role you're interviewing for, then try again."; err.hidden = false; $("#f-role").focus(); return false; }
+  err.hidden = true; return true;
+}
+function ctx(){
+  const s = S.setup;
+  return `ROLE: ${s.role}
+COMPANY: ${s.company || "(not specified)"}
+EXPERIENCE LEVEL: ${s.level}
+INTERVIEW ROUND: ${s.round}
+
+JOB DESCRIPTION:
+${clip(s.jd, 9000) || "(not provided)"}
+
+CANDIDATE RESUME:
+${clip(s.resume, 9000) || "(not provided)"}`;
+}
+
+/* ---------- File upload ---------- */
+function loadScript(src){
+  return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("load")); document.head.appendChild(s); });
+}
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+const PDFWK = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const MAMMOTH = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
+$("#uploadBtn").addEventListener("click", () => $("#file").click());
+$("#file").addEventListener("change", async e => {
+  const file = e.target.files[0]; if(!file) return;
+  const st = $("#fileStatus"); st.textContent = "Reading " + file.name + "…";
+  try{
+    let text = "";
+    const name = file.name.toLowerCase();
+    if(name.endsWith(".pdf")){
+      if(!window.pdfjsLib) await loadScript(PDFJS);
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWK;
+      const pdf = await window.pdfjsLib.getDocument({data: await file.arrayBuffer()}).promise;
+      for(let i = 1; i <= pdf.numPages; i++){
+        const c = await (await pdf.getPage(i)).getTextContent();
+        text += c.items.map(it => it.str).join(" ") + "\n";
+      }
+    } else if(name.endsWith(".docx")){
+      if(!window.mammoth) await loadScript(MAMMOTH);
+      text = (await window.mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()})).value;
+    } else {
+      text = await file.text();
+    }
+    text = text.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+    if(!text) throw new Error("empty");
+    $("#f-resume").value = text; S.setup.resume = text; store.set("mr.setup", S.setup);
+    st.textContent = "Loaded " + file.name + ". Check the text below looks right.";
+  }catch(err){
+    st.textContent = "Couldn't read that file (scanned PDFs have no text). Paste your resume text instead.";
+  }
+  e.target.value = "";
+});
+
+/* ---------- Prep brief ---------- */
+let briefCtl = null;
+$("#btnBrief").addEventListener("click", buildBrief);
+$("#briefStop").addEventListener("click", () => briefCtl && briefCtl.abort());
+async function buildBrief(){
+  if(!validate()) return;
+  show("brief");
+  $("#briefLoading").hidden = false; $("#briefErr").hidden = true; $("#briefBody").innerHTML = "";
+  $("#briefStatus").textContent = "Thinking…";
+  briefCtl = new AbortController();
+  const prompt = `You are an elite interview coach who has sat on hundreds of hiring panels. Build a focused, specific prep brief for this candidate. No generic filler: every point must tie to this role, this company and this candidate's actual resume.
+
+${ctx()}
+
+Reply with only JSON in exactly this shape:
+{"company":{"summary":"2-3 sentences: what the company does and what it's like to work there, from your general knowledge","values":["3-5 things they are known to look for in hires"],"confidence":"high|medium|low"},
+"focus":["5 competencies this round will judge, short phrases"],
+"strengths":[{"point":"a strength that matches the role","evidence":"the specific resume item that proves it"}],
+"gaps":[{"point":"a likely concern the interviewer will have","how":"how to address it honestly in the interview"}],
+"questions":[{"q":"a question they are likely to ask in this round","why":"what they are really testing","tip":"how THIS candidate should answer, naming a specific experience from their resume"}],
+"stories":[{"theme":"e.g. conflict, failure, ownership, ambiguity","use":"which experience from the resume to tell, in one line"}],
+"askThem":["sharp questions the candidate can ask the interviewer"]}
+Give 3-4 strengths, 2-3 gaps, 8 questions matched to the "${S.setup.round}" round, 4 stories and 4 askThem. If no company is given, describe the typical employer for this role and set confidence to "low". If the resume is missing, say so in the evidence fields and base advice on the role.`;
+  try{
+    const b = await askJSON(prompt, {signal: briefCtl.signal, onText: ({text}) => { $("#briefStatus").textContent = "Writing the brief… " + Math.min(99, Math.round(text.length / 60)) + "%"; }});
+    S.brief = b; refreshNav(); renderBrief(b);
+  }catch(e){
+    const msg = copyFor(e);
+    if(msg){ $("#briefErr").innerHTML = esc(msg) + ' <button class="filebtn" id="briefRetry">Try again</button>'; $("#briefErr").hidden = false; $("#briefRetry").onclick = buildBrief; }
+    else show("setup");
+  }finally{ $("#briefLoading").hidden = true; }
+}
+function arr(x){ return Array.isArray(x) ? x : []; }
+function renderBrief(b){
+  const c = b.company || {};
+  const conf = {high:"Based on well-known public information.", medium:"From general knowledge. Double-check recent news before the interview.", low:"Limited or no company info. Look up their recent news, products and values yourself."}[c.confidence] || "";
+  $("#briefBody").innerHTML = `
+    <h1>Your prep brief</h1>
+    <p class="lede">${esc(S.setup.role)}${S.setup.company ? " at " + esc(S.setup.company) : ""}, ${esc(S.setup.round.toLowerCase())} round. Read this once, then start the interview.</p>
+    <div class="panel">
+      <div class="bsec">
+        <h2>${esc(S.setup.company || "The company")}</h2>
+        <p style="margin:0 0 12px">${esc(c.summary)}</p>
+        <div class="chips">${arr(c.values).map(v => `<span class="chip">${esc(v)}</span>`).join("")}</div>
+        ${conf ? `<p class="small muted" style="margin:12px 0 0">${esc(conf)}</p>` : ""}
+      </div>
+      <div class="bsec">
+        <h2>What this round will judge</h2>
+        <div class="chips">${arr(b.focus).map(v => `<span class="chip">${esc(v)}</span>`).join("")}</div>
+      </div>
+      <div class="bsec two">
+        <div><h2>Where you're strong</h2><ul class="clean">${arr(b.strengths).map(s => `<li><span class="mark" style="background:var(--good)"></span><b>${esc(s.point)}</b><div class="small muted" style="margin-left:16px">${esc(s.evidence)}</div></li>`).join("")}</ul></div>
+        <div><h2>What they may worry about</h2><ul class="clean">${arr(b.gaps).map(s => `<li><span class="mark" style="background:var(--bad)"></span><b>${esc(s.point)}</b><div class="small muted" style="margin-left:16px">${esc(s.how)}</div></li>`).join("")}</ul></div>
+      </div>
+      <div class="bsec">
+        <h2>Questions you'll likely get</h2>
+        <ol class="qlist">${arr(b.questions).map(q => `<li><span class="q">${esc(q.q)}</span><span class="meta"><b style="color:var(--ink)">Testing:</b> ${esc(q.why)}<br><b style="color:var(--ink)">Your angle:</b> ${esc(q.tip)}</span></li>`).join("")}</ol>
+      </div>
+      <div class="bsec">
+        <h2>Stories to have ready</h2>
+        <ul class="clean">${arr(b.stories).map(s => `<li><b>${esc(s.theme)}</b><div class="small muted">${esc(s.use)}</div></li>`).join("")}</ul>
+      </div>
+      <div class="bsec">
+        <h2>Questions to ask them</h2>
+        <ul class="clean">${arr(b.askThem).map(q => `<li>${esc(q)}</li>`).join("")}</ul>
+      </div>
+    </div>
+    <div class="actions"><button class="btn" id="briefStart">Start the mock interview</button><button class="btn ghost" id="briefEdit">Edit setup</button></div>`;
+  $("#briefStart").onclick = startInterview;
+  $("#briefEdit").onclick = () => show("setup");
+}
+
+/* ---------- Interview ---------- */
+$("#btnStart").addEventListener("click", startInterview);
+const speakToggle = $("#speakToggle");
+speakToggle.checked = store.get("mr.speak", false);
+speakToggle.addEventListener("change", () => { store.set("mr.speak", speakToggle.checked); if(!speakToggle.checked) try{ speechSynthesis.cancel(); }catch(e){} });
+if(!("speechSynthesis" in window)) speakToggle.closest("label").hidden = true;
+function speak(t){ if(!speakToggle.checked) return; try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.rate = 1; speechSynthesis.speak(u); }catch(e){} }
+
+function startInterview(){
+  if(!validate()){ show("setup"); return; }
+  S.tr = []; S.k = 0; S.fu = false; S.done = false; S.report = null;
+  S.iv = NAMES[Math.floor(Math.random() * NAMES.length)];
+  S.ivStyle = S.setup.style;
+  $("#answer").value = ""; $("#hintBox").hidden = true;
+  refreshNav(); show("room"); renderRoom();
+  interviewerTurn();
+}
+function N(){ return parseInt(S.setup.count, 10) || 7; }
+function transcriptText(){
+  return S.tr.map(t => (t.who === "i" ? "INTERVIEWER: " : "CANDIDATE: ") + t.text).join("\n\n");
+}
+function interviewerPrompt(){
+  const n = N(), k = S.k;
+  const lastWasCandidate = S.tr.length && S.tr[S.tr.length - 1].who === "c";
+  let plan;
+  if(S.tr.length === 0){
+    plan = `Start the interview now: greet the candidate warmly in one short sentence, introduce yourself as ${S.iv}, then ask your first main question.`;
+  } else if(k >= n){
+    plan = S.fu ? "All main questions are done. Close the interview now: thank the candidate briefly and tell them that's the end of the session (kind \"closing\")."
+                : "All main questions have been asked. Either ask ONE follow-up on the last answer if it clearly needs probing, or close the interview (kind \"closing\").";
+  } else {
+    plan = S.fu ? `Move on to main question ${k + 1} of ${n} (kind "question"). Do not ask another follow-up on the previous topic.`
+                : `Either ask ONE follow-up on the last answer (kind "followup") if it was vague, generic, missing their personal role, missing results/numbers, or skipped part of the question, or move on to main question ${k + 1} of ${n} (kind "question").`;
+  }
+  const styleRule = {
+    Friendly: "Warm and encouraging tone, but still professional and still probing when answers are thin.",
+    Neutral: "Calm, professional, neutral tone, like most real interviewers.",
+    Tough: "Demanding bar-raiser: skeptical, probes hard for specifics, numbers, trade-offs and what the candidate personally did. Polite but not warm."
+  }[S.ivStyle] || "";
+  return `You are ${S.iv}, a real interviewer at ${S.setup.company || "a company hiring for this role"}, running a live ${S.setup.round} interview for a ${S.setup.role} candidate (${S.setup.level}).
+
+${ctx()}
+
+HOW YOU INTERVIEW:
+- Speak like a real person in a live conversation: 1-3 sentences, one question at a time. No lists, no markdown.
+- ${styleRule}
+- Never coach, score or give feedback during the interview. A short neutral acknowledgement before your next question is fine; don't praise every answer.
+- Tailor questions to the job description and to the candidate's actual resume (name their real projects, companies, tools). Vary question types; don't repeat topics already covered.
+- Match difficulty to the experience level. For coding or system design rounds, ask them to talk through their approach and probe trade-offs, complexity, edge cases and scale.
+- If the candidate asks you to repeat or clarify, do that (kind "clarify").
+- If the candidate's answer is off-topic or a non-answer, steer them back like a real interviewer would.
+
+WHAT TO DO NEXT: ${plan}
+
+TRANSCRIPT SO FAR:
+${clip(transcriptText(), 30000) || "(the interview has not started)"}
+${lastWasCandidate ? "\n(The candidate just finished speaking.)" : ""}
+
+Reply with only JSON: {"kind":"question|followup|clarify|closing","say":"exactly what you say out loud"}`;
+}
+
+async function interviewerTurn(){
+  setBusy(true, S.tr.length ? `${S.iv} is thinking…` : `${S.iv} is joining…`);
+  $("#roomErr").hidden = true;
+  try{
+    const r = await askJSON(interviewerPrompt(), {modelTier: "quick", cache: false});
+    let kind = String((r && r.kind) || "question").toLowerCase();
+    let say = String((r && r.say) || "").trim();
+    if(!say) throw {code: "empty_completion"};
+    if(kind === "followup" && S.fu) kind = "question";
+    if(kind === "question"){
+      if(S.k >= N()){ kind = "closing"; say = "Great, that's all the questions I have. Thanks for your time today."; }
+      else { S.k++; S.fu = false; }
+    } else if(kind === "followup"){ S.fu = true; }
+    else if(kind !== "clarify" && kind !== "closing"){ kind = "question"; S.k++; S.fu = false; }
+    S.tr.push({who: "i", text: say, kind});
+    if(kind === "closing") S.done = true;
+    $("#hintBox").hidden = true;
+    renderRoom(); speak(say); startTimer();
+    if(!S.done) $("#answer").focus();
+  }catch(e){
+    const msg = copyFor(e) || "Stopped.";
+    $("#roomErr").innerHTML = esc(msg) + ' <button class="filebtn" id="roomRetry">Try again</button>';
+    $("#roomErr").hidden = false;
+    $("#roomRetry").onclick = interviewerTurn;
+  }finally{ setBusy(false); }
+}
+function setBusy(on, label){
+  S.busy = on;
+  $("#roomStatus").hidden = !on;
+  if(label) $("#roomStatusText").textContent = label;
+  $("#question").classList.toggle("dim", on);
+  ["#btnSend","#btnHint","#answer"].forEach(s => $(s).disabled = on);
+}
+function renderRoom(){
+  const n = N();
+  const lastI = [...S.tr].reverse().find(t => t.who === "i");
+  $("#avatar").textContent = S.iv ? S.iv[0] : "·";
+  $("#speakerName").textContent = S.iv ? `${S.iv}, ${S.ivStyle.toLowerCase()} interviewer` : "";
+  $("#question").textContent = lastI ? lastI.text : "";
+  $("#qCounter").textContent = S.done ? "Interview finished" : S.k ? `Question ${S.k} of ${n}${lastI && lastI.kind === "followup" ? ", follow-up" : ""}` : "Starting";
+  $("#liveTag .pulse").hidden = S.done;
+  $("#progBar").style.width = (S.done ? 100 : Math.max(0, (S.k - 1) / n * 100)) + "%";
+  $("#answerBox").hidden = S.done;
+  $("#doneBox").hidden = !S.done;
+  $("#btnEnd").hidden = S.done;
+  const past = S.tr.slice(0, -1);
+  $("#txBox").hidden = past.length === 0;
+  $("#txBox summary").textContent = `Transcript (${S.tr.length} turns)`;
+  $("#txList").innerHTML = S.tr.map(t => `<div class="turn"><b>${t.who === "i" ? esc(S.iv) : "You"}</b>${esc(t.text)}</div>`).join("");
+  if(S.done) stopTimer();
+}
+let timerId = null, t0 = 0;
+function startTimer(){ stopTimer(); t0 = Date.now(); tick(); timerId = setInterval(tick, 1000); }
+function stopTimer(){ if(timerId) clearInterval(timerId); timerId = null; $("#timer").textContent = ""; }
+function tick(){ const s = Math.floor((Date.now() - t0) / 1000); $("#timer").textContent = `· ${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
+
+$("#btnSend").addEventListener("click", sendAnswer);
+$("#answer").addEventListener("keydown", e => { if(e.key === "Enter" && (e.ctrlKey || e.metaKey)){ e.preventDefault(); sendAnswer(); } });
+function sendAnswer(){
+  const t = $("#answer").value.trim();
+  if(!t || S.busy || S.done) return;
+  stopMic();
+  S.tr.push({who: "c", text: t});
+  $("#answer").value = "";
+  renderRoom();
+  interviewerTurn();
+}
+$("#btnHint").addEventListener("click", async () => {
+  const lastI = [...S.tr].reverse().find(t => t.who === "i"); if(!lastI || S.busy) return;
+  const box = $("#hintBox"); box.hidden = false; box.textContent = "Thinking of a nudge…";
+  $("#btnHint").disabled = true;
+  try{
+    const txt = await askText(`You are an interview coach whispering to a candidate mid-interview. The interviewer just asked: "${lastI.text}"
+
+${ctx()}
+
+In 2-3 short lines of plain text (no markdown): say what the interviewer is really testing, a structure to answer with, and which specific experience from their resume to use. Do NOT write the answer for them.`, {modelTier: "quick", cache: false});
+    box.textContent = txt.trim();
+  }catch(e){ box.textContent = copyFor(e) || ""; if(!box.textContent) box.hidden = true; }
+  finally{ $("#btnHint").disabled = S.busy; }
+});
+$("#btnEnd").addEventListener("click", () => {
+  const answered = S.tr.filter(t => t.who === "c").length;
+  if(!answered){ if(confirm("End without answering anything? Nothing will be scored.")){ S.tr = []; refreshNav(); stopTimer(); show("setup"); } return; }
+  if(!confirm(`End now and score the ${answered} answer${answered === 1 ? "" : "s"} you gave?`)) return;
+  S.done = true; S.tr.push({who: "i", text: "Let's stop here. Thanks for your time.", kind: "closing"});
+  renderRoom(); makeReport();
+});
+$("#btnReport").addEventListener("click", makeReport);
+
+/* ---------- Voice input ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, recBase = "";
+if(SR) $("#btnMic").hidden = false;
+$("#btnMic").addEventListener("click", () => rec ? stopMic() : startMic());
+function startMic(){
+  try{
+    rec = new SR(); rec.continuous = true; rec.interimResults = true; rec.lang = navigator.language || "en-IN";
+    recBase = $("#answer").value ? $("#answer").value.trim() + " " : "";
+    let finals = "";
+    rec.onresult = ev => {
+      let interim = "";
+      for(let i = ev.resultIndex; i < ev.results.length; i++){
+        const r = ev.results[i];
+        if(r.isFinal) finals += r[0].transcript + " "; else interim += r[0].transcript;
+      }
+      $("#answer").value = recBase + finals + interim;
+    };
+    rec.onerror = ev => {
+      $("#micNote").textContent = (ev.error === "not-allowed" || ev.error === "service-not-allowed")
+        ? "The microphone is blocked here. Type your answer instead." : "Voice input stopped. Tap Speak to continue.";
+      stopMic();
+    };
+    rec.onend = () => { if(rec) stopMic(); };
+    rec.start();
+    $("#btnMic").setAttribute("aria-pressed", "true"); $("#btnMic").textContent = "Stop speaking";
+    $("#micNote").textContent = "Listening…";
+  }catch(e){ $("#micNote").textContent = "Voice input isn't available here. Type your answer instead."; rec = null; }
+}
+function stopMic(){
+  const r = rec; rec = null;
+  try{ r && r.stop(); }catch(e){}
+  $("#btnMic").setAttribute("aria-pressed", "false"); $("#btnMic").textContent = "Speak";
+  if($("#micNote").textContent === "Listening…") $("#micNote").textContent = "";
+}
+
+/* ---------- Report ---------- */
+let repCtl = null;
+$("#repStop").addEventListener("click", () => repCtl && repCtl.abort());
+async function makeReport(){
+  show("report");
+  $("#repLoading").hidden = false; $("#repErr").hidden = true; $("#repBody").innerHTML = "";
+  $("#repStatus").textContent = "Thinking…";
+  repCtl = new AbortController();
+  const prompt = `You are a senior hiring manager and interview coach. Evaluate this mock interview honestly, like a real bar-raiser, not a cheerleader. Judge against the expectations for the stated experience level.
+
+${ctx()}
+
+INTERVIEW TRANSCRIPT:
+${clip(transcriptText(), 40000)}
+
+Reply with only JSON in exactly this shape:
+{"overall": integer 0-100,
+"verdict": "Strong hire|Hire|Borderline|Not yet",
+"summary": "2-3 sentences: your honest overall read, as you'd tell a friend",
+"scores": {"Content": 1-10, "Structure": 1-10, "Specificity": 1-10, "Communication": 1-10, "Role fit": 1-10},
+"strengths": ["3 specific things they did well, quoting or pointing to moments"],
+"fixes": [{"issue": "the problem", "how": "a concrete fix"}],
+"answers": [{"question": "the main question, shortened", "score": 1-10, "worked": "what worked", "missing": "what was missing or weak", "better": "a stronger model answer in the candidate's own voice using their REAL resume experience, 90-150 words, STAR structure for behavioral questions"}],
+"drills": ["3 specific practice exercises for the next session"]}
+Give the top 3 fixes, most impactful first. One entry in answers per main question (fold follow-ups into the same entry). Only include questions the candidate actually answered. If answers were very short or evasive, score them low and say so plainly.`;
+  try{
+    const r = await askJSON(prompt, {signal: repCtl.signal, cache: false, onText: ({text}) => { $("#repStatus").textContent = "Writing your report… " + Math.min(99, Math.round(text.length / 70)) + "%"; }});
+    S.report = r; refreshNav();
+    const hist = store.get("mr.history", []);
+    hist.unshift({id: Date.now(), date: new Date().toISOString(), setup: {...S.setup, jd: "", resume: ""}, iv: S.iv, report: r});
+    store.set("mr.history", hist.slice(0, 25));
+    renderReport(r, S.setup);
+  }catch(e){
+    const msg = copyFor(e) || "Stopped before the report finished.";
+    $("#repErr").innerHTML = esc(msg) + ' <button class="filebtn" id="repRetry">Try again</button>';
+    $("#repErr").hidden = false; $("#repRetry").onclick = makeReport;
+  }finally{ $("#repLoading").hidden = true; }
+}
+function tone(v, max){
+  const p = v / max;
+  return p >= .75 ? ["var(--good)","var(--good-soft)"] : p >= .5 ? ["var(--accent)","var(--accent-soft)"] : ["var(--bad)","var(--bad-soft)"];
+}
+function num(x, d){ const n = Number(x); return isFinite(n) ? n : d; }
+function renderReport(r, setup, fromHistory){
+  const overall = Math.max(0, Math.min(100, Math.round(num(r.overall, 0))));
+  const [vc, vs] = tone(overall, 100);
+  const scores = r.scores && typeof r.scores === "object" ? Object.entries(r.scores) : [];
+  $("#repBody").innerHTML = `
+    <h1>How it went</h1>
+    <p class="lede">${esc(setup.role)}${setup.company ? " at " + esc(setup.company) : ""}, ${esc(String(setup.round).toLowerCase())} round.</p>
+    <div class="panel">
+      <div class="scorehead">
+        <div class="big" style="color:${vc}">${overall}<small>/100</small></div>
+        <div>
+          <span class="verdict" style="background:${vs};color:${vc}">${esc(r.verdict || "")}</span>
+          <p style="margin:0">${esc(r.summary)}</p>
+        </div>
+      </div>
+      ${scores.length ? `<div class="bars">${scores.map(([k, v]) => { const n = Math.max(0, Math.min(10, num(v, 0))); return `<span>${esc(k)}</span><span class="bar"><i style="width:${n*10}%;background:${tone(n,10)[0]}"></i></span><b>${n}</b>`; }).join("")}</div>` : ""}
+      <div class="bsec two" style="margin-top:22px">
+        <div><h2>What worked</h2><ul class="clean">${arr(r.strengths).map(s => `<li><span class="mark" style="background:var(--good)"></span>${esc(s)}</li>`).join("")}</ul></div>
+        <div><h2>Fix these first</h2><ul class="clean">${arr(r.fixes).map(f => `<li><b>${esc(f.issue)}</b><div class="small muted">${esc(f.how)}</div></li>`).join("")}</ul></div>
+      </div>
+      <div class="bsec">
+        <h2>Answer by answer</h2>
+        ${arr(r.answers).map((a, i) => { const sc = Math.max(0, Math.min(10, num(a.score, 0))); const [c, s] = tone(sc, 10); return `
+          <details class="ans" ${i === 0 ? "open" : ""}>
+            <summary><span class="q">${esc(a.question)}</span><span class="pill" style="background:${s};color:${c}">${sc}/10</span></summary>
+            <div class="ansbody">
+              <div><h3>Worked</h3>${esc(a.worked)}</div>
+              <div><h3>Missing</h3>${esc(a.missing)}</div>
+              <div><h3>A stronger answer</h3><div class="better">${esc(a.better)}</div></div>
+            </div>
+          </details>`; }).join("")}
+      </div>
+      <div class="bsec">
+        <h2>Practice before next time</h2>
+        <ul class="clean">${arr(r.drills).map(d => `<li>${esc(d)}</li>`).join("")}</ul>
+      </div>
+    </div>
+    <div class="actions">
+      ${fromHistory ? "" : `<button class="btn" id="again">Practice again with new questions</button>`}
+      <button class="btn ghost" id="newSetup">Change setup</button>
+    </div>`;
+  const again = $("#again"); if(again) again.onclick = startInterview;
+  $("#newSetup").onclick = () => show("setup");
+}
+
+/* ---------- History ---------- */
+function renderHistory(){
+  const hist = store.get("mr.history", []);
+  const box = $("#histBody");
+  if(!hist.length){ box.innerHTML = `<div class="panel"><p style="margin:0">No finished interviews yet. <button class="filebtn" id="goSetup">Set up your first one</button></p></div>`; $("#goSetup").onclick = () => show("setup"); return; }
+  const pts = hist.slice(0, 12).reverse().map(h => Math.max(0, Math.min(100, num(h.report && h.report.overall, 0))));
+  let trend = "";
+  if(pts.length > 1){
+    const w = 600, h = 90, step = w / (pts.length - 1);
+    const path = pts.map((p, i) => `${i ? "L" : "M"}${(i*step).toFixed(1)},${(h - 8 - p/100*(h-16)).toFixed(1)}`).join(" ");
+    trend = `<svg class="trend" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Score trend across your last ${pts.length} interviews"><path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+  }
+  box.innerHTML = `<div class="panel">${trend}<ul class="hist">${hist.map((h, i) => {
+    const o = Math.round(num(h.report && h.report.overall, 0)); const [c, s] = tone(o, 100);
+    const d = new Date(h.date);
+    return `<li><button class="open" data-i="${i}"><b>${esc(h.setup.role)}${h.setup.company ? " at " + esc(h.setup.company) : ""}</b><br><span class="small muted">${esc(h.setup.round)}, ${d.toLocaleDateString(undefined,{day:"numeric",month:"short"})}</span></button><span class="pill" style="background:${s};color:${c}">${o}</span></li>`;
+  }).join("")}</ul>
+  <div class="actions"><button class="btn ghost" id="clearHist">Clear history</button></div></div>`;
+  box.querySelectorAll("button.open").forEach(b => b.onclick = () => {
+    const h = hist[+b.dataset.i]; show("report"); $("#repErr").hidden = true; renderReport(h.report, h.setup, true);
+  });
+  $("#clearHist").onclick = () => { if(confirm("Delete all saved interview reports from this browser?")){ store.set("mr.history", []); renderHistory(); } };
+}
+
+refreshNav();
+show("setup");
+})();
+</script>
+</body>
+</html>
