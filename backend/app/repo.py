@@ -99,6 +99,11 @@ def state_of(s: InterviewSession) -> InterviewState:
     return InterviewState(main_asked=s.main_asked, followup_used=s.followup_used, done=s.status == "done")
 
 
+def iso(dt: datetime) -> str:
+    """ISO 8601 with an explicit UTC offset (SQLite returns naive datetimes)."""
+    return (dt if dt.tzinfo else dt.replace(tzinfo=UTC)).isoformat()
+
+
 def to_out(s: InterviewSession) -> dict[str, Any]:
     """The session as the frontend sees it."""
     return {
@@ -110,7 +115,7 @@ def to_out(s: InterviewSession) -> dict[str, Any]:
         "brief": s.brief.content if s.brief else None,
         "turns": [t.model_dump(exclude_none=True) for t in transcript_of(s)],
         "report": s.report.content if s.report else None,
-        "created_at": s.created_at.isoformat(),
+        "created_at": iso(s.created_at),
     }
 
 
@@ -193,7 +198,7 @@ async def history(db: AsyncSession, user: User, limit: int = 50) -> list[dict[st
             "level": s.level,
             "style": s.style,
             "interviewer": s.interviewer,
-            "date": r.created_at.isoformat(),
+            "date": iso(r.created_at),
             "overall": r.overall,
             "verdict": r.verdict,
         }

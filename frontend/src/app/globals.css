@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ---------- Design tokens ---------- */
+:root {
+  --bg: #f7f4ef;
+  --bg-2: #efebe4;
+  --surface: rgb(255 255 255 / 0.72);
+  --surface-strong: rgb(255 255 255 / 0.92);
+  --line: rgb(20 20 30 / 0.1);
+  --line-strong: rgb(20 20 30 / 0.18);
+  --ink: #14131a;
+  --muted: #5e5c66;
+  --accent: #e0590a;
+  --accent-2: #e11d48;
+  --accent-3: #7c3aed;
+  --accent-ink: #ffffff;
+  --good: #047857;
+  --warn: #9a6700;
+  --bad: #c81e1e;
+  --focus: #2d5bcb;
+  --shadow: 0 1px 2px rgb(20 20 30 / 0.06), 0 12px 40px -12px rgb(20 20 30 / 0.18);
+  --grain-opacity: 0.05;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #07080c;
+  --bg-2: #0d0f16;
+  --surface: rgb(255 255 255 / 0.04);
+  --surface-strong: rgb(255 255 255 / 0.075);
+  --line: rgb(255 255 255 / 0.09);
+  --line-strong: rgb(255 255 255 / 0.18);
+  --ink: #f3f1ec;
+  --muted: #a09fab;
+  --accent: #ff8a3d;
+  --accent-2: #ff4d6d;
+  --accent-3: #a78bfa;
+  --accent-ink: #120a04;
+  --good: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --focus: #8fb0ff;
+  --shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 20px 60px -20px rgb(0 0 0 / 0.7);
+  --grain-opacity: 0.07;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-3: var(--accent-3);
+  --color-accent-ink: var(--accent-ink);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-focus: var(--focus);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-instrument-serif), Georgia, serif;
+  --shadow-soft: var(--shadow);
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-spin-slow: spin 14s linear infinite;
+}
+
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@keyframes float {
+  50% { transform: translateY(-10px); }
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* ---------- Base ---------- */
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+/* The page background lives on <html> only, so the fixed aurora layer (z-index -10) shows through <body>. */
+body {
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Film grain over everything; pointer-events none so it never blocks clicks. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Utilities ---------- */
+@utility text-gradient {
+  background: linear-gradient(100deg, var(--accent) 0%, var(--accent-2) 45%, var(--accent-3) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@utility bg-gradient-brand {
+  background: linear-gradient(100deg, var(--accent) 0%, var(--accent-2) 55%, var(--accent-3) 110%);
+}
+@utility glass {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+@utility grid-lines {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at 50% 0%, black 20%, transparent 70%);
+}
+@utility shimmer-text {
+  background: linear-gradient(90deg, var(--muted) 0%, var(--ink) 50%, var(--muted) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: var(--animate-shimmer);
+}
+@utility caret {
+  display: inline-block;
+  width: 0.08em;
+  height: 0.9em;
+  margin-left: 0.06em;
+  vertical-align: -0.05em;
+  background: var(--accent);
+  animation: blink 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

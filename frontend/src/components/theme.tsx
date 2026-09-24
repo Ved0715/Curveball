@@ -1,0 +1,67 @@
+"use client";
+
+import { Monitor, Moon, Sun } from "lucide-react";
+import { useCallback, useSyncExternalStore } from "react";
+import { THEME_KEY as KEY } from "@/lib/theme-script";
+
+type Pref = "system" | "light" | "dark";
+
+
+function readPref(): Pref {
+  try {
+    const v = localStorage.getItem(KEY);
+    return v === "light" || v === "dark" ? v : "system";
+  } catch {
+    return "system";
+  }
+}
+
+function apply(pref: Pref) {
+  const dark = pref === "dark" || (pref === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+}
+
+const listeners = new Set<() => void>();
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  const mq = matchMedia("(prefers-color-scheme: dark)");
+  const onSystem = () => {
+    if (readPref() === "system") apply("system");
+  };
+  mq.addEventListener("change", onSystem);
+  return () => {
+    listeners.delete(cb);
+    mq.removeEventListener("change", onSystem);
+  };
+}
+
+const ORDER: Pref[] = ["system", "light", "dark"];
+const ICONS = { system: Monitor, light: Sun, dark: Moon };
+
+export function ThemeToggle() {
+  const pref = useSyncExternalStore<Pref>(subscribe, readPref, () => "system");
+
+  const cycle = useCallback(() => {
+    const next = ORDER[(ORDER.indexOf(readPref()) + 1) % ORDER.length];
+    try {
+      localStorage.setItem(KEY, next);
+    } catch {
+      /* storage blocked: still switch for this page view */
+    }
+    apply(next);
+    listeners.forEach((l) => l());
+  }, []);
+
+  const Icon = ICONS[pref];
+  return (
+    <button
+      type="button"
+      onClick={cycle}
+      className="grid size-10 cursor-pointer place-items-center rounded-xl border border-line bg-surface text-muted transition hover:text-ink"
+      aria-label={`Theme: ${pref}. Click to change.`}
+      title={`Theme: ${pref}`}
+    >
+      <Icon className="size-[18px]" aria-hidden />
+    </button>
+  );
+}

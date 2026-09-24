@@ -18,13 +18,14 @@ Read `prototype/mock-room.html` before building anything. Keep its user flow, it
 The prototype calls `window.claude.use("sample")`, which only exists inside claude.ai. In the product, ALL model calls go through our own server using the Anthropic API. The API key lives only in server environment variables and never reaches the browser.
 
 ## Stack (confirm with me before changing)
-- Next.js (App Router) + TypeScript (strict) + Tailwind CSS
-- Anthropic TypeScript SDK on the server, with streaming to the client
-- Postgres (Supabase) with Supabase Auth; Prisma or Drizzle for the schema
-- Deploy on Vercel
-- Tests: Vitest for logic, Playwright for the main flow
+- Frontend: `frontend/` — Next.js 16 (App Router) + TypeScript (strict) + Tailwind CSS 4, Motion for animation, Zod for validation, Zustand for small client state
+- Backend: `backend/` — FastAPI (Python 3.13, managed with `uv`) + Anthropic Python SDK, streaming to the client over Server-Sent Events
+- Database: Postgres on Neon, via SQLAlchemy 2 (async, psycopg 3); schema changes only through Alembic migrations
+- Identity (until auth lands): an anonymous per-browser id sent as `X-Client-Id`
+- Deploy: frontend on Vercel; backend host to be decided
+- Tests: pytest (backend, in-memory SQLite), Vitest (frontend logic), Playwright (main flow, desktop + mobile, mock AI + throwaway SQLite)
 
-Look up current Anthropic model names and SDK usage in the official docs (docs.claude.com). Do not guess model strings from memory. Keep model names in one config file.
+Model names live only in `backend/app/config.py` (fast = Haiku 4.5, balanced = Sonnet 5, capable = Opus 5). Look up current names in the official docs before changing them.
 
 ## How to work with me
 - I'm learning, so explain what you're doing in plain language and why, briefly.
@@ -34,11 +35,18 @@ Look up current Anthropic model names and SDK usage in the official docs (docs.c
 - Commit small, working steps with clear messages.
 
 ## Commands
-(Fill these in once the project is scaffolded.)
+Backend (run in `backend/`):
+- Dev: `uv run uvicorn app.main:app --reload --port 8000`
+- Typecheck: `uv run mypy`
+- Lint: `uv run ruff check . && uv run ruff format --check .`
+- Test: `uv run pytest`
+- Migrations: `uv run alembic revision --autogenerate -m "..."`, then `uv run alembic upgrade head`; `uv run alembic check` detects drift
+
+Frontend (run in `frontend/`):
 - Dev: `npm run dev`
 - Typecheck: `npm run typecheck`
 - Lint: `npm run lint`
-- Test: `npm test`
+- Test: `npm test`, end-to-end: `npm run test:e2e`
 
 ## Rules
 - Never commit secrets. Use `.env.local` and keep `.env.example` updated.

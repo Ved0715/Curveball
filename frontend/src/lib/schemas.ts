@@ -1,0 +1,147 @@
+import { z } from "zod";
+
+/* Setup options (must match backend/app/schemas.py) */
+export const LEVELS = [
+  "Intern / fresher",
+  "Junior (1–3 yrs)",
+  "Mid-level (3–6 yrs)",
+  "Senior (6+ yrs)",
+  "Lead / manager",
+] as const;
+
+export const ROUNDS = [
+  "Mixed (like a real first round)",
+  "Behavioral",
+  "Technical concepts",
+  "Coding (talk through your approach)",
+  "System design",
+  "HR and culture fit",
+  "Product sense / case",
+] as const;
+
+export const STYLES = ["Friendly", "Neutral", "Tough"] as const;
+export const COUNTS = [4, 7, 10] as const;
+
+export const SetupSchema = z.object({
+  role: z.string().trim().min(1, "Add the role you're interviewing for.").max(200),
+  company: z.string().max(200),
+  level: z.enum(LEVELS),
+  round: z.enum(ROUNDS),
+  style: z.enum(STYLES),
+  question_count: z.union([z.literal(4), z.literal(7), z.literal(10)]),
+  jd: z.string().max(60000),
+  resume: z.string().max(60000),
+});
+export type Setup = z.infer<typeof SetupSchema>;
+
+export const DEFAULT_SETUP: Setup = {
+  role: "",
+  company: "",
+  level: "Junior (1–3 yrs)",
+  round: "Mixed (like a real first round)",
+  style: "Neutral",
+  question_count: 7,
+  jd: "",
+  resume: "",
+};
+
+/* Model outputs, validated again on the client before we render them */
+export const BriefSchema = z.object({
+  company: z.object({
+    summary: z.string(),
+    values: z.array(z.string()),
+    confidence: z.enum(["high", "medium", "low"]),
+  }),
+  focus: z.array(z.string()),
+  strengths: z.array(z.object({ point: z.string(), evidence: z.string() })),
+  gaps: z.array(z.object({ point: z.string(), how: z.string() })),
+  questions: z.array(z.object({ q: z.string(), why: z.string(), tip: z.string() })),
+  stories: z.array(z.object({ theme: z.string(), use: z.string() })),
+  askThem: z.array(z.string()),
+});
+export type Brief = z.infer<typeof BriefSchema>;
+
+export const TurnKindSchema = z.enum(["question", "followup", "clarify", "closing"]);
+export type TurnKind = z.infer<typeof TurnKindSchema>;
+
+export const InterviewStateSchema = z.object({
+  main_asked: z.number().int().min(0),
+  followup_used: z.boolean(),
+  done: z.boolean(),
+});
+export type InterviewState = z.infer<typeof InterviewStateSchema>;
+
+export const TurnResultSchema = z.object({
+  kind: TurnKindSchema,
+  say: z.string().min(1),
+  state: InterviewStateSchema,
+});
+export type TurnResult = z.infer<typeof TurnResultSchema>;
+
+export const TurnSchema = z.object({
+  speaker: z.enum(["interviewer", "candidate"]),
+  text: z.string(),
+  kind: TurnKindSchema.nullish(),
+  answer_seconds: z.number().int().nullish(),
+});
+export type Turn = z.infer<typeof TurnSchema>;
+
+export const HintResultSchema = z.object({ text: z.string() });
+
+const score10 = z.number().min(0).max(10);
+
+export const SCORE_KEYS = ["Content", "Structure", "Specificity", "Communication", "Role fit"] as const;
+
+export const ReportSchema = z.object({
+  overall: z.number().min(0).max(100),
+  verdict: z.enum(["Strong hire", "Hire", "Borderline", "Not yet"]),
+  summary: z.string(),
+  scores: z.object({
+    Content: score10,
+    Structure: score10,
+    Specificity: score10,
+    Communication: score10,
+    "Role fit": score10,
+  }),
+  strengths: z.array(z.string()),
+  fixes: z.array(z.object({ issue: z.string(), how: z.string() })),
+  answers: z.array(
+    z.object({
+      question: z.string(),
+      score: score10,
+      worked: z.string(),
+      missing: z.string(),
+      better: z.string(),
+    }),
+  ),
+  drills: z.array(z.string()),
+});
+export type Report = z.infer<typeof ReportSchema>;
+
+/* Server resources */
+export const SessionSchema = z.object({
+  id: z.string(),
+  setup: SetupSchema,
+  interviewer: z.string(),
+  status: z.enum(["setup", "brief", "live", "done"]),
+  state: InterviewStateSchema,
+  brief: BriefSchema.nullable(),
+  turns: z.array(TurnSchema),
+  report: ReportSchema.nullable(),
+  created_at: z.string(),
+});
+export type Session = z.infer<typeof SessionSchema>;
+
+export const HistoryItemSchema = z.object({
+  id: z.string(),
+  role: z.string(),
+  company: z.string(),
+  round: z.string(),
+  level: z.string(),
+  style: z.string(),
+  interviewer: z.string(),
+  date: z.string(),
+  overall: z.number(),
+  verdict: z.string(),
+});
+export type HistoryItem = z.infer<typeof HistoryItemSchema>;

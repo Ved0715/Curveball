@@ -23,3 +23,6 @@ coverage/
 next-env.d.ts
 test-results/
 playwright-report/
+
+# Local test databases
+*.sqlite
