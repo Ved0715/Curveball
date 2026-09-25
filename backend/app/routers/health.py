@@ -20,11 +20,12 @@ async def _db_ok() -> bool:
 
 
 @router.get("/health")
-async def health() -> dict[str, bool]:
+async def health() -> dict[str, bool | str]:
     s = get_settings()
     return {
         "ok": True,
         "mock": s.ai_mock,
-        "ai_configured": bool(s.anthropic_api_key) or s.ai_mock,
+        "ai_configured": s.ai_key_present or s.ai_mock,
+        "provider": "mock" if s.ai_mock else s.ai_provider,
         "db": await _db_ok(),
     }

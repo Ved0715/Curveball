@@ -14,6 +14,7 @@ from typing import Any, Literal
 import anthropic
 from pydantic import BaseModel, ValidationError
 
+from app import llm_gemini
 from app.config import get_settings
 
 log = logging.getLogger("mockroom.llm")
@@ -53,8 +54,21 @@ class Finished:
 StreamEvent = TextDelta | Finished
 
 
-def model_for(tier: Tier) -> str:
+def gemini_models(tier: Tier) -> list[str]:
     s = get_settings()
+    raw = {
+        "fast": s.gemini_models_fast,
+        "balanced": s.gemini_models_balanced,
+        "capable": s.gemini_models_capable,
+    }
+    return [m.strip() for m in raw[tier].split(",") if m.strip()]
+
+
+def model_for(tier: Tier) -> str:
+    """The preferred model for a tier with the active provider."""
+    s = get_settings()
+    if s.ai_provider == "gemini":
+        return gemini_models(tier)[0]
     return {"fast": s.model_fast, "balanced": s.model_balanced, "capable": s.model_capable}[tier]
 
 
@@ -105,7 +119,42 @@ async def stream(
     schema: type[BaseModel] | None = None,
     cache_system: bool = False,
 ) -> AsyncIterator[StreamEvent]:
-    """Yield text deltas, then one Finished with the full text."""
+    """Yield text deltas, then one Finished with the full text, from the active provider."""
+    source = (
+        _stream_gemini(tier, system, user, max_tokens, schema)
+        if get_settings().ai_provider == "gemini"
+        else _stream_anthropic(tier, system, user, max_tokens, schema, cache_system)
+    )
+    async for ev in source:
+        yield ev
+
+
+async def _stream_gemini(
+    tier: Tier, system: str, user: str, max_tokens: int, schema: type[BaseModel] | None
+) -> AsyncIterator[StreamEvent]:
+    s = get_settings()
+    level = {
+        "fast": s.gemini_thinking_fast,
+        "balanced": s.gemini_thinking_balanced,
+        "capable": s.gemini_thinking_capable,
+    }[tier]
+    async for item in llm_gemini.stream(gemini_models(tier), level or None, system, user, max_tokens, schema):
+        if item[0] == "delta":
+            yield TextDelta(item[1])
+        else:
+            _, text, tokens_in, tokens_out, served = item
+            log.info("ai call tier=%s model=%s in=%s out=%s", tier, served, tokens_in, tokens_out)
+            yield Finished(text, tokens_in=tokens_in, tokens_out=tokens_out, model=served)
+
+
+async def _stream_anthropic(
+    tier: Tier,
+    system: str,
+    user: str,
+    max_tokens: int,
+    schema: type[BaseModel] | None,
+    cache_system: bool,
+) -> AsyncIterator[StreamEvent]:
     kwargs = _request_kwargs(tier, system, user, max_tokens, schema, cache_system)
     try:
         async with _client().beta.messages.stream(**kwargs) as s:

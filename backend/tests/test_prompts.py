@@ -1,4 +1,5 @@
 import anthropic
+import pytest
 
 from app.config import get_settings
 from app.llm import _request_kwargs
@@ -43,8 +44,9 @@ def test_report_clamps_out_of_range_numbers() -> None:
     assert r.answers[0].score == 10
 
 
-def test_model_tiers_come_from_config() -> None:
+def test_model_tiers_come_from_config(monkeypatch: pytest.MonkeyPatch) -> None:
     s = get_settings()
+    monkeypatch.setattr(s, "ai_provider", "anthropic")
     assert _request_kwargs("fast", "sys", "u", 10, None, False)["model"] == s.model_fast
     capable = _request_kwargs("capable", "sys", "u", 10, Report, False)
     assert capable["model"] == s.model_capable

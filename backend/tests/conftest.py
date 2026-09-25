@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import db as db_module
-from app import llm
+from app import llm, llm_gemini
 from app.config import get_settings
 from app.main import app
 
@@ -19,10 +19,8 @@ def isolated(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     db_module.get_engine.cache_clear()
     db_module.get_sessionmaker.cache_clear()
     llm._client.cache_clear()
+    llm_gemini._client.cache_clear()
     yield
-    db_module.get_engine.cache_clear()
-    db_module.get_sessionmaker.cache_clear()
-    llm._client.cache_clear()
 
 
 CLIENT_A = "client-aaaaaaaaaaaaaaaa"

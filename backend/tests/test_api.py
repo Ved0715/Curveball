@@ -10,7 +10,7 @@ from tests.helpers import SETUP, create, events, fake_stream, play_interview, re
 
 def test_health_reports_db(client: TestClient) -> None:
     r = client.get("/api/health")
-    assert r.json() == {"ok": True, "mock": True, "ai_configured": True, "db": True}
+    assert r.json() == {"ok": True, "mock": True, "ai_configured": True, "provider": "mock", "db": True}
     assert r.headers["X-Request-Id"]
 
 
@@ -204,6 +204,7 @@ def test_daily_ai_limit(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> 
 def test_missing_api_key_is_reported(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     sid = create(client)
     monkeypatch.setattr(get_settings(), "ai_mock", False)
+    monkeypatch.setattr(get_settings(), "gemini_api_key", None)
     monkeypatch.setattr(get_settings(), "anthropic_api_key", None)
     body = client.post(f"/api/sessions/{sid}/turn", json={}).text
     assert events(body)[-1] == ("error", {"code": "not_configured", "retryable": False})
