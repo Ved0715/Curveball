@@ -3,7 +3,6 @@
 from collections import Counter
 from datetime import date, timedelta
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
@@ -42,7 +41,6 @@ class Progress(BaseModel):
 
 @router.get("")
 async def progress(db: Db, user: CurrentUser, days: int = Query(84, ge=7, le=371)) -> Progress:
-    tz = ZoneInfo(user.timezone)
     today = learning.local_today(user)
     rows = (await db.scalars(select(Assignment).where(Assignment.user_id == user.id))).all()
     done = [a for a in rows if a.completed]
@@ -57,7 +55,7 @@ async def progress(db: Db, user: CurrentUser, days: int = Query(84, ge=7, le=371
             .order_by(Report.created_at)
         )
     ).all()
-    report_days = [c.astimezone(tz).date() for _, c in reports]
+    report_days = [learning.local_date(c, user.timezone) for _, c in reports]
 
     xp = (
         learning.XP_LEARNED * len(done)
@@ -82,7 +80,7 @@ async def progress(db: Db, user: CurrentUser, days: int = Query(84, ge=7, le=371
             )
         )
 
-    since = user.created_at.astimezone(tz).date()
+    since = learning.local_date(user.created_at, user.timezone)
     first = min(done_days) if done_days else since
     scores = [o for o, _ in reports]
     return Progress(

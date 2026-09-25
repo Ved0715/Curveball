@@ -34,9 +34,11 @@ def get_engine() -> AsyncEngine:
     kwargs: dict[str, Any] = {}
     if url.startswith("postgresql"):
         kwargs = {
-            # Neon suspends idle databases and drops idle connections: check before use.
-            "pool_pre_ping": True,
-            "pool_recycle": 300,
+            # Neon drops connections when it suspends after 5 idle minutes. Recycling anything
+            # older than 4 minutes means a pooled connection never outlives a suspend, without
+            # pool_pre_ping's extra round trips (measured at 300-550 ms per request to Neon).
+            "pool_pre_ping": False,
+            "pool_recycle": 240,
             "pool_size": 5,
             "max_overflow": 5,
             # Safe behind Neon's PgBouncer pooler (transaction mode can't share prepared statements).

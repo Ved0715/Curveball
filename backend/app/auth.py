@@ -6,6 +6,7 @@
   are extended while in use; logging out deletes the row.
 """
 
+import asyncio
 import hashlib
 import secrets
 import time
@@ -44,6 +45,15 @@ def verify_password(password_hash: str, password: str) -> bool:
         return False
 
 
+# argon2 is deliberately slow CPU work; run it in a thread so other requests keep flowing.
+async def hash_password_async(password: str) -> str:
+    return await asyncio.to_thread(hash_password, password)
+
+
+async def verify_password_async(password_hash: str, password: str) -> bool:
+    return await asyncio.to_thread(verify_password, password_hash, password)
+
+
 def valid_timezone(tz: str) -> bool:
     try:
         ZoneInfo(tz)
@@ -67,7 +77,7 @@ async def find_user(db: AsyncSession, email: str) -> User | None:
 async def create_user(db: AsyncSession, email: str, password: str, name: str, timezone: str) -> User:
     user = User(
         email=normalize_email(email),
-        password_hash=hash_password(password),
+        password_hash=await hash_password_async(password),
         name=name.strip(),
         timezone=timezone if valid_timezone(timezone) else "Asia/Kolkata",
     )
@@ -81,12 +91,12 @@ async def create_user(db: AsyncSession, email: str, password: str, name: str, ti
 async def authenticate(db: AsyncSession, email: str, password: str) -> User | None:
     user = await find_user(db, email)
     if user is None:
-        verify_password(_DUMMY_HASH, password)
+        await verify_password_async(_DUMMY_HASH, password)
         return None
-    if not verify_password(user.password_hash, password):
+    if not await verify_password_async(user.password_hash, password):
         return None
     if _hasher.check_needs_rehash(user.password_hash):
-        user.password_hash = hash_password(password)
+        user.password_hash = await hash_password_async(password)
         await db.commit()
     return user
 
@@ -122,9 +132,17 @@ def clear_cookie(response: Response) -> None:
 
 
 async def user_for_token(db: AsyncSession, token: str) -> User | None:
-    row = await db.scalar(select(AuthSession).where(AuthSession.token_hash == _hash_token(token)))
-    if row is None:
+    # One round trip for session and user together (this runs on every signed-in request).
+    found = (
+        await db.execute(
+            select(AuthSession, User)
+            .join(User, User.id == AuthSession.user_id)
+            .where(AuthSession.token_hash == _hash_token(token))
+        )
+    ).first()
+    if found is None:
         return None
+    row, user = found
     now = datetime.now(UTC)
     expires = row.expires_at if row.expires_at.tzinfo else row.expires_at.replace(tzinfo=UTC)
     if expires <= now:
@@ -135,7 +153,7 @@ async def user_for_token(db: AsyncSession, token: str) -> User | None:
         row.expires_at = now + timedelta(days=SESSION_DAYS)
         row.last_seen_at = now
         await db.commit()
-    return await db.get(User, row.user_id)
+    return user
 
 
 async def end_session(db: AsyncSession, token: str) -> None:

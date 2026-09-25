@@ -25,9 +25,9 @@ async def update_profile(body: ProfileUpdate, db: Db, user: CurrentUser) -> User
 
 @router.post("/password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(body: PasswordChange, db: Db, user: CurrentUser) -> Response:
-    if not auth.verify_password(user.password_hash, body.current):
+    if not await auth.verify_password_async(user.password_hash, body.current):
         raise AppError(401, "bad_credentials")
-    user.password_hash = auth.hash_password(body.new)
+    user.password_hash = await auth.hash_password_async(body.new)
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
