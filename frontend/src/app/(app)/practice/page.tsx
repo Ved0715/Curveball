@@ -4,12 +4,14 @@ import { ArrowRight, FileText, FlaskConical, Play, Upload, WifiOff } from "lucid
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { PageShell, PageSkeleton, PageTitle } from "@/components/page-shell";
+import { CurveUnderline } from "@/components/brand";
+import { PageSkeleton } from "@/components/page-shell";
 import { ErrorPanel } from "@/components/status";
-import { Button, Card, Field, inputClass, Segmented } from "@/components/ui";
+import { Button, Field, inputClass, Segmented } from "@/components/ui";
 import { createSession, getHealth, uploadResume } from "@/lib/api";
 import { friendlyError } from "@/lib/errors";
-import { cn } from "@/lib/format";
+import { cn, shortRound } from "@/lib/format";
+import { spring } from "@/lib/motion";
 import { COUNTS, LEVELS, ROUNDS, SetupSchema, STYLES } from "@/lib/schemas";
 import { useHydrated, useStore } from "@/lib/store";
 
@@ -23,7 +25,7 @@ function ServerNotice() {
   if (health === "loading") return null;
   if (health === null || !health.db)
     return (
-      <div role="status" className="mb-6 flex items-center gap-3 rounded-2xl border border-bad/30 bg-bad/[0.07] p-4 text-sm">
+      <div role="status" className="mb-8 flex items-center gap-3 rounded-xl border-2 border-bad bg-surface p-4 text-sm">
         <WifiOff className="size-4 shrink-0 text-bad" aria-hidden />
         {health === null
           ? "Can't reach the server. If you're running locally, start the backend on port 8000."
@@ -32,9 +34,9 @@ function ServerNotice() {
     );
   if (health.mock)
     return (
-      <div role="status" className="mb-6 flex items-center gap-3 rounded-2xl border border-warn/30 bg-warn/[0.08] p-4 text-sm">
+      <div role="status" className="mb-8 flex items-center gap-3 rounded-xl border-2 border-dashed border-line bg-surface p-4 text-sm">
         <FlaskConical className="size-4 shrink-0 text-warn" aria-hidden />
-        Demo mode: the AI returns sample responses. Add an Anthropic API key on the server for real interviews.
+        Demo mode: the AI returns sample responses. Add an AI key on the server for real interviews.
       </div>
     );
   return null;
@@ -75,15 +77,15 @@ function ResumeUpload({ onText }: { onText: (text: string) => void }) {
           void handle(e.dataTransfer.files[0]);
         }}
         className={cn(
-          "group flex w-full cursor-pointer items-center gap-4 rounded-2xl border border-dashed p-4 text-left transition",
-          drag ? "border-accent bg-accent/10" : "border-line-strong hover:border-accent/60 hover:bg-surface",
+          "group mb-3 flex w-full cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed p-4 text-left transition",
+          drag ? "scale-[1.01] border-line bg-pop/25" : "border-line-soft hover:border-line hover:bg-surface",
         )}
       >
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface-strong transition group-hover:scale-105">
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl border-2 border-line bg-surface transition group-hover:-rotate-6">
           {status.kind === "ok" ? (
             <FileText className="size-5 text-good" aria-hidden />
           ) : (
-            <Upload className={cn("size-5 text-accent", status.kind === "busy" && "animate-bounce")} aria-hidden />
+            <Upload className={cn("size-5", status.kind === "busy" && "animate-bounce")} aria-hidden />
           )}
         </span>
         <span>
@@ -145,26 +147,30 @@ export default function SetupPage() {
     }
   }
 
+  const ready = setup.role.trim().length > 0;
+  const summary = [setup.level, shortRound(setup.round), setup.style, `${setup.question_count} questions`].join(" · ");
+
   return (
-    <PageShell>
-      <PageTitle
-        step="Step 1 of 4 · Set up"
-        title={
-          <>
-            Tell us about <em className="text-gradient">the interview.</em>
-          </>
-        }
-        lede="The more detail you give, the sharper the questions. Everything is tailored to this role and your real resume."
-      />
+    <div className="mx-auto max-w-4xl px-4 pt-8 sm:px-6 lg:pt-10">
+      <header className="mb-10">
+        <p className="text-label text-muted">Practice · Set up</p>
+        <h1 className="mt-3 text-display">
+          Tell us about <CurveUnderline>the interview</CurveUnderline>
+        </h1>
+        <p className="mt-4 max-w-2xl text-muted">
+          The more detail you give, the sharper the questions. Everything is tailored to this role and your real resume.
+        </p>
+      </header>
       <ServerNotice />
       <form
         onSubmit={(e) => {
           e.preventDefault();
           void begin("brief");
         }}
+        className="grid grid-cols-1 gap-12"
       >
-        <Card className="p-5 sm:p-8">
-          <div className="grid gap-6 sm:grid-cols-2">
+        <FormSection n={1} title="The job">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <Field label="Role" htmlFor="role" error={error}>
               <input
                 ref={roleRef}
@@ -187,6 +193,28 @@ export default function SetupPage() {
                 onChange={(e) => update({ company: e.target.value })}
               />
             </Field>
+            <div className="sm:col-span-2">
+              <Field
+                label="Job description"
+                hint="Paste the posting"
+                htmlFor="jd"
+                aside={<span className="font-mono text-xs text-muted">{setup.jd.length.toLocaleString()} chars</span>}
+              >
+                <textarea
+                  id="jd"
+                  rows={6}
+                  className={cn(inputClass, "resize-y leading-relaxed")}
+                  placeholder="Paste the job description here"
+                  value={setup.jd}
+                  onChange={(e) => update({ jd: e.target.value })}
+                />
+              </Field>
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection n={2} title="The room">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <Field label="Experience level" htmlFor="level">
               <select
                 id="level"
@@ -219,79 +247,91 @@ export default function SetupPage() {
               onChange={(v) => update({ question_count: v })}
               render={(v) => `${v} questions`}
             />
-            <div className="sm:col-span-2">
-              <Field
-                label="Job description"
-                hint="Paste the posting"
-                htmlFor="jd"
-                aside={<span className="font-mono text-xs text-muted">{setup.jd.length.toLocaleString()} chars</span>}
-              >
-                <textarea
-                  id="jd"
-                  rows={6}
-                  className={cn(inputClass, "resize-y leading-relaxed")}
-                  placeholder="Paste the job description here"
-                  value={setup.jd}
-                  onChange={(e) => update({ jd: e.target.value })}
-                />
-              </Field>
-            </div>
-            <div className="sm:col-span-2">
-              <Field
-                label="Your resume"
-                hint="Upload or paste"
-                htmlFor="resume"
-                aside={<span className="font-mono text-xs text-muted">{setup.resume.length.toLocaleString()} chars</span>}
-              >
-                <ResumeUpload onText={(resume) => update({ resume })} />
-                <textarea
-                  id="resume"
-                  rows={7}
-                  className={cn(inputClass, "resize-y leading-relaxed")}
-                  placeholder="…or paste your resume text here"
-                  value={setup.resume}
-                  onChange={(e) => update({ resume: e.target.value })}
-                />
-              </Field>
-            </div>
           </div>
-        </Card>
+        </FormSection>
 
-        <AnimatePresence>
-          {!setup.resume.trim() && setup.role.trim() && (
-            <motion.p
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-4 text-sm text-muted"
-            >
-              Tip: without a resume, questions and model answers will be generic.
-            </motion.p>
-          )}
-        </AnimatePresence>
-
-        {submit.error && (
-          <div className="mt-6">
-            <ErrorPanel message={submit.error} />
-          </div>
-        )}
-
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Button type="submit" size="lg" loading={submit.busy === "brief"} disabled={!!submit.busy}>
-            Build my prep brief <ArrowRight className="size-4" aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            loading={submit.busy === "skip"}
-            disabled={!!submit.busy}
-            onClick={() => void begin("skip")}
+        <FormSection n={3} title="You">
+          <Field
+            label="Your resume"
+            hint="Upload or paste"
+            htmlFor="resume"
+            aside={<span className="font-mono text-xs text-muted">{setup.resume.length.toLocaleString()} chars</span>}
           >
-            <Play className="size-4" aria-hidden /> Skip to interview
-          </Button>
+            <ResumeUpload onText={(resume) => update({ resume })} />
+            <textarea
+              id="resume"
+              rows={7}
+              className={cn(inputClass, "resize-y leading-relaxed")}
+              placeholder="…or paste your resume text here"
+              value={setup.resume}
+              onChange={(e) => update({ resume: e.target.value })}
+            />
+          </Field>
+          <AnimatePresence>
+            {!setup.resume.trim() && ready && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="mt-3 text-sm text-muted"
+              >
+                Tip: without a resume, questions and model answers will be generic.
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </FormSection>
+
+        {submit.error && <ErrorPanel message={submit.error} />}
+
+        {/* Sticky summary: what you're about to start, always one tap away */}
+        <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 -mx-4 border-t-2 border-line bg-bg/90 px-4 py-4 backdrop-blur-md sm:-mx-6 sm:px-6 lg:bottom-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.p
+                  key={ready ? "ready" : "empty"}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={spring.snappy}
+                  className="truncate font-semibold"
+                >
+                  {ready ? `${setup.role.trim()}${setup.company.trim() ? ` at ${setup.company.trim()}` : ""}` : "Add a role to begin"}
+                </motion.p>
+              </AnimatePresence>
+              <p className="truncate text-sm text-muted">{summary}</p>
+            </div>
+            <div className="flex min-w-0 gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                aria-label="Skip to interview"
+                loading={submit.busy === "skip"}
+                disabled={!!submit.busy}
+                onClick={() => void begin("skip")}
+              >
+                <Play className="size-4" aria-hidden /> <span className="sm:hidden">Skip</span>
+                <span className="hidden sm:inline">Skip to interview</span>
+              </Button>
+              <Button type="submit" className="min-w-0 flex-1 sm:flex-none" loading={submit.busy === "brief"} disabled={!!submit.busy}>
+                Build my prep brief <ArrowRight className="size-4" aria-hidden />
+              </Button>
+            </div>
+          </div>
         </div>
       </form>
-    </PageShell>
+    </div>
+  );
+}
+
+function FormSection({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+  return (
+    <section className="rule grid grid-cols-1 gap-5 pt-5 md:grid-cols-[180px_1fr] md:gap-8">
+      <h2 className="flex items-baseline gap-3 text-headline">
+        <span className="font-mono text-sm text-muted">0{n}</span>
+        {title}
+      </h2>
+      <div className="min-w-0">{children}</div>
+    </section>
   );
 }

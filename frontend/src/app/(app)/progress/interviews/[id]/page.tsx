@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { CurveUnderline } from "@/components/brand";
 import { PageShell, PageSkeleton, PageTitle } from "@/components/page-shell";
 import { ReportView } from "@/components/report-view";
 import { ErrorPanel } from "@/components/status";
@@ -32,8 +33,8 @@ export default function PastReportPage() {
 
   return (
     <PageShell>
-      <Link href="/progress" className="mb-6 inline-flex items-center gap-2 text-sm text-muted hover:text-ink">
-        <ArrowLeft className="size-4" aria-hidden /> Back to progress
+      <Link href="/progress" className="group mb-6 inline-flex h-10 items-center gap-2 text-sm font-semibold text-muted hover:text-ink">
+        <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" aria-hidden /> Back to progress
       </Link>
       {load.status === "error" ? (
         <ErrorPanel
@@ -56,7 +57,7 @@ export default function PastReportPage() {
             })}
             title={
               <>
-                Interview with <em className="text-gradient">{load.session.interviewer}</em>
+                Interview with <CurveUnderline>{load.session.interviewer}</CurveUnderline>
               </>
             }
           />

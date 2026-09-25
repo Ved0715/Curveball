@@ -1,32 +1,12 @@
 "use client";
 
-import { Circle, CircleAlert, CircleCheck, LoaderCircle, RotateCcw, Square } from "lucide-react";
+import { CircleAlert, CircleCheck, RotateCcw, Square } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState, type ReactNode } from "react";
-import { Button, Card } from "./ui";
-import { useReducedMotion } from "@/lib/motion";
-
-/** Three orbiting dots around a glowing core. */
-export function OrbitLoader({ size = 64 }: { size?: number }) {
-  const reduce = useReducedMotion();
-  return (
-    <div className="relative" style={{ width: size, height: size }} aria-hidden>
-      <div className="bg-gradient-brand absolute inset-[30%] rounded-full blur-md" />
-      <div className="bg-gradient-brand absolute inset-[36%] rounded-full" />
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="absolute inset-0"
-          animate={reduce ? undefined : { rotate: 360 }}
-          transition={{ duration: 2.4 + i * 0.7, repeat: Infinity, ease: "linear" }}
-          style={{ rotate: i * 120 }}
-        >
-          <span className="absolute left-1/2 top-0 size-2 -translate-x-1/2 rounded-full bg-ink/80" />
-        </motion.div>
-      ))}
-    </div>
-  );
-}
+import { cn } from "@/lib/format";
+import { spring } from "@/lib/motion";
+import { Ball, BallLoader } from "./brand";
+import { Button } from "./ui";
 
 /** Rotates through status lines so long waits feel alive. */
 function useCycling(lines: string[], ms = 2600) {
@@ -40,22 +20,26 @@ function useCycling(lines: string[], ms = 2600) {
 
 export type Step = { key: string; label: string; active: string };
 
-/** Discrete steps: done ✓, current (spinning), or not started. Shows real progress, not a guess. */
+/** Discrete steps: done, current (the ball sits on it), or not started. Real progress, not a guess. */
 function StepList({ steps, current }: { steps: Step[]; current: number }) {
   return (
-    <ol className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3" aria-label="Progress">
+    <ol className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3" aria-label="Progress">
       {steps.map((st, i) => {
         const state = i < current ? "done" : i === current ? "current" : "todo";
         return (
           <li key={st.key} className="flex items-center gap-2 text-sm" aria-current={state === "current" ? "step" : undefined}>
-            {i > 0 && <span className="hidden h-px w-6 bg-line-strong sm:block" aria-hidden />}
-            {state === "done" ? (
-              <CircleCheck className="size-4 text-good" aria-hidden />
-            ) : state === "current" ? (
-              <LoaderCircle className="size-4 animate-spin text-accent" aria-hidden />
-            ) : (
-              <Circle className="size-4 text-muted/50" aria-hidden />
-            )}
+            {i > 0 && <span className={cn("hidden h-0.5 w-6 sm:block", state === "todo" ? "bg-line-soft" : "bg-line")} aria-hidden />}
+            <span className="grid size-5 place-items-center">
+              {state === "done" ? (
+                <CircleCheck className="size-4 text-good" aria-hidden />
+              ) : state === "current" ? (
+                <motion.span layoutId="stream-step" transition={spring.snappy}>
+                  <Ball size={16} state="spin" />
+                </motion.span>
+              ) : (
+                <span className="size-2.5 rounded-full border-2 border-line-soft" aria-hidden />
+              )}
+            </span>
             <span className={state === "todo" ? "text-muted/60" : state === "current" ? "font-semibold" : "text-muted"}>
               {st.label}
               <span className="sr-only">{state === "done" ? " (done)" : state === "current" ? " (in progress)" : ""}</span>
@@ -95,49 +79,47 @@ export function StreamingPanel({
       ? `Writing… ${percent}%`
       : line;
   return (
-    <Card className="mx-auto max-w-2xl p-8 sm:p-12">
-      <div className="flex flex-col items-center text-center">
-        <OrbitLoader size={84} />
-        <h1 className="mt-8 font-display text-4xl tracking-tight sm:text-5xl">{title}</h1>
-        <p className="mt-3 max-w-md text-muted">{lede}</p>
-        {steps && (
-          <div className="mt-8">
-            <StepList steps={steps} current={current} />
-          </div>
-        )}
-        <div className="mt-6 h-6" aria-live="polite">
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={status.startsWith("Writing…") ? "writing" : status}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="shimmer-text text-sm font-medium"
-            >
-              {status}
-            </motion.p>
-          </AnimatePresence>
+    <div className="mx-auto flex max-w-2xl flex-col items-center py-6 text-center sm:py-12">
+      <BallLoader />
+      <h1 className="mt-8 text-display">{title}</h1>
+      <p className="mt-3 max-w-md text-muted">{lede}</p>
+      {steps && (
+        <div className="mt-8">
+          <StepList steps={steps} current={current} />
         </div>
-        <div
-          className="mt-4 h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-surface-strong"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={onLastStep ? (percent ?? undefined) : undefined}
-          aria-label="Progress"
-        >
-          <motion.div
-            className="bg-gradient-brand h-full rounded-full"
-            initial={{ width: "2%" }}
-            animate={{ width: `${Math.max(4, onLastStep ? (percent ?? 4) : 4)}%` }}
-            transition={{ ease: "easeOut", duration: 0.6 }}
-          />
-        </div>
-        <Button variant="ghost" size="sm" className="mt-8" onClick={onStop}>
-          <Square className="size-3.5 fill-current" aria-hidden /> Stop
-        </Button>
+      )}
+      <div className="mt-6 h-6" aria-live="polite">
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={status.startsWith("Writing…") ? "writing" : status}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="shimmer-text text-sm font-medium"
+          >
+            {status}
+          </motion.p>
+        </AnimatePresence>
       </div>
-    </Card>
+      <div
+        className="mt-4 h-2 w-full max-w-sm overflow-hidden rounded-full border-2 border-line bg-surface"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={onLastStep ? (percent ?? undefined) : undefined}
+        aria-label="Progress"
+      >
+        <motion.div
+          className="h-full origin-left bg-pop"
+          initial={{ scaleX: 0.02 }}
+          animate={{ scaleX: Math.max(4, onLastStep ? (percent ?? 4) : 4) / 100 }}
+          transition={spring.gentle}
+        />
+      </div>
+      <Button variant="ghost" size="sm" className="mt-8" onClick={onStop}>
+        <Square className="size-3.5 fill-current" aria-hidden /> Stop
+      </Button>
+    </div>
   );
 }
 

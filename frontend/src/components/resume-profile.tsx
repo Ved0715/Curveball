@@ -27,7 +27,7 @@ function summaryLine(p: ResumeProfile) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-8 first:mt-0">
-      <h3 className="mb-3 font-mono text-[0.72rem] uppercase tracking-[0.16em] text-muted">{title}</h3>
+      <h3 className="mb-3 text-label text-muted">{title}</h3>
       {children}
     </section>
   );
@@ -35,13 +35,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function ProfileDetail({ p }: { p: ResumeProfile }) {
   return (
-    <div className="border-t border-line px-6 pt-7 pb-6 sm:px-8">
+    <div className="border-t-2 border-line px-6 pt-7 pb-6 sm:px-8">
       {p.metrics.length > 0 && (
         <Section title="Numbers you can cite">
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {p.metrics.map((m, i) => (
-              <li key={`${m.value}-${i}`} className="rounded-2xl border border-line bg-surface p-4">
-                <p className="text-gradient font-display text-3xl leading-none">{m.value}</p>
+              <li key={`${m.value}-${i}`} className="rounded-xl border-2 border-line-soft p-4">
+                <p className="font-display text-3xl leading-none font-extrabold">{m.value}</p>
                 <p className="mt-2 text-xs text-muted">{m.context}</p>
               </li>
             ))}
@@ -51,10 +51,10 @@ function ProfileDetail({ p }: { p: ResumeProfile }) {
 
       {p.experience.length > 0 && (
         <Section title="Experience">
-          <ol className="relative ml-1.5 border-l border-line">
+          <ol className="relative ml-1.5 border-l-2 border-line-soft">
             {p.experience.map((r, i) => (
               <li key={`${r.company}-${i}`} className="relative pb-6 pl-6 last:pb-0">
-                <span className="bg-gradient-brand absolute top-1.5 -left-[5px] size-2.5 rounded-full" aria-hidden />
+                <span className="absolute top-1.5 -left-[7px] size-3 rounded-full border-2 border-line bg-pop" aria-hidden />
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                   <p className="font-semibold">
                     {r.title} <span className="font-normal text-muted">· {r.company}</span>
@@ -81,7 +81,7 @@ function ProfileDetail({ p }: { p: ResumeProfile }) {
         <Section title="Projects">
           <ul className="grid gap-3 sm:grid-cols-2">
             {p.projects.map((pr) => (
-              <li key={pr.name} className="rounded-2xl border border-line bg-surface p-4">
+              <li key={pr.name} className="rounded-xl border-2 border-line-soft p-4">
                 <p className="font-semibold">{pr.name}</p>
                 <p className="mt-1 text-sm text-muted">{pr.summary}</p>
                 {pr.impact && (
@@ -93,7 +93,7 @@ function ProfileDetail({ p }: { p: ResumeProfile }) {
                 {pr.tech.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {pr.tech.map((t) => (
-                      <span key={t} className="rounded-md bg-surface-strong px-2 py-0.5 font-mono text-[0.7rem]">
+                      <span key={t} className="rounded-md border border-line-soft px-2 py-0.5 font-mono text-[0.7rem]">
                         {t}
                       </span>
                     ))}
@@ -130,7 +130,7 @@ function ProfileDetail({ p }: { p: ResumeProfile }) {
         </Section>
       )}
 
-      <p className="mt-8 flex items-start gap-2 rounded-2xl bg-good/[0.07] p-4 text-sm">
+      <p className="mt-8 flex items-start gap-2 rounded-xl border-2 border-dashed border-good/60 p-4 text-sm">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-good" aria-hidden />
         <span>
           Everything here was found in your resume; anything we couldn&apos;t verify was left out. Missing something
@@ -169,7 +169,7 @@ export function ResumeProfileCard({ profile, hasResume }: { profile: ResumeProfi
           </div>
           <Link
             href="/practice"
-            className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl border border-line bg-surface px-4 text-sm font-semibold transition hover:bg-surface-strong"
+            className="inline-flex h-10 shrink-0 items-center justify-center press neo-sm rounded-xl bg-surface px-4 text-sm font-semibold"
           >
             Add resume
           </Link>
@@ -203,12 +203,12 @@ export function ResumeProfileCard({ profile, hasResume }: { profile: ResumeProfi
           aria-controls={panelId}
           className="flex w-full cursor-pointer items-center gap-4 p-6 text-left transition hover:bg-surface sm:p-7"
         >
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-line bg-surface-strong">
-            <ScanSearch className="size-5 text-accent" aria-hidden />
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl border-2 border-line bg-pop">
+            <ScanSearch className="size-5 text-pop-ink" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
             <Eyebrow>What we read from your resume</Eyebrow>
-            <span className="mt-1 block truncate font-display text-2xl leading-tight">{profile.headline}</span>
+            <span className="mt-1 block truncate text-title">{profile.headline}</span>
             {summary && <span className="mt-1 block text-sm text-muted">{summary}</span>}
           </span>
           <ChevronDown

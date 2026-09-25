@@ -1,48 +1,54 @@
 "use client";
 
-import { Check, KeyRound, ListOrdered, LogOut, Target, Trash2, UserRound } from "lucide-react";
+import { Check, LogOut, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "@/components/dialog";
 import { QueuePanel } from "@/components/learn";
-import { PageShell, PageSkeleton, PageTitle } from "@/components/page-shell";
-import { Button, Card, Field, inputClass } from "@/components/ui";
-import {
-  addToQueue,
-  changePassword,
-  deleteAccount,
-  getPrefs,
-  getQueue,
-  putPrefs,
-  removeFromQueue,
-  updateMe,
-} from "@/lib/api";
+import { CurveUnderline, TrackGlyph } from "@/components/brand";
+import { PageSkeleton } from "@/components/page-shell";
+import { Skel } from "@/components/skeleton";
+import { Button, Field, inputClass } from "@/components/ui";
+import { changePassword, deleteAccount, getPrefs, getQueue, putPrefs, updateMe } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { TRACKS, trackColor } from "@/lib/brand";
+import { TRACKS } from "@/lib/brand";
 import { friendlyError } from "@/lib/errors";
 import { cn } from "@/lib/format";
+import { spring } from "@/lib/motion";
 import type { QueueItem } from "@/lib/schemas";
 import { useStore } from "@/lib/store";
 
-function Section({ icon, title, lede, children }: { icon: ReactNode; title: string; lede?: string; children: ReactNode }) {
+/** Ruled settings row: what it is on the left, the controls on the right. */
+function Section({ id, title, lede, children }: { id?: string; title: string; lede?: ReactNode; children: ReactNode }) {
   return (
-    <Card className="rounded-3xl p-6 sm:p-7">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h2 className="font-display text-2xl font-extrabold">{title}</h2>
+    <section id={id} className="rule grid scroll-mt-24 grid-cols-1 gap-5 pt-6 lg:grid-cols-[260px_1fr] lg:gap-10">
+      <div>
+        <h2 className="text-headline">{title}</h2>
+        {lede && <p className="mt-1.5 text-sm text-muted">{lede}</p>}
       </div>
-      {lede && <p className="mt-1 text-sm text-muted">{lede}</p>}
-      <div className="mt-5">{children}</div>
-    </Card>
+      <div className="min-w-0">{children}</div>
+    </section>
   );
 }
 
 function Saved({ show }: { show: boolean }) {
-  return show ? (
-    <span className="inline-flex items-center gap-1 text-sm font-semibold text-good" role="status">
-      <Check className="size-4" strokeWidth={3} aria-hidden /> Saved
-    </span>
-  ) : null;
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.span
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={spring.bouncy}
+          className="inline-flex items-center gap-1 text-sm font-semibold text-good"
+          role="status"
+        >
+          <Check className="size-4" strokeWidth={3} aria-hidden /> Saved
+        </motion.span>
+      )}
+    </AnimatePresence>
+  );
 }
 
 function ProfileSection() {
@@ -59,9 +65,9 @@ function ProfileSection() {
   const [state, setState] = useState<{ busy: boolean; saved: boolean; error?: string }>({ busy: false, saved: false });
   if (!user) return null;
   return (
-    <Section icon={<UserRound className="size-5" aria-hidden />} title="Profile" lede={user.email}>
+    <Section title="Profile" lede={user.email}>
       <form
-        className="grid gap-5 sm:grid-cols-2"
+        className="grid grid-cols-1 gap-5 sm:grid-cols-2"
         onSubmit={async (e) => {
           e.preventDefault();
           setState({ busy: true, saved: false });
@@ -118,38 +124,56 @@ function FocusSection() {
   }
   return (
     <Section
-      icon={<Target className="size-5" aria-hidden />}
       title="Focus areas"
       lede="Daily topics come only from tracks that are on. History from turned-off tracks still counts."
     >
       {focus === null ? (
-        <p className="text-sm text-muted">{error ?? "Loading…"}</p>
+        error ? (
+          <p className="text-sm text-bad">{error}</p>
+        ) : (
+          <div className="grid gap-2" aria-busy>
+            {TRACKS.map((t) => (
+              <Skel key={t.id} className="h-12" />
+            ))}
+          </div>
+        )
       ) : (
-        <div className="flex flex-wrap gap-3" role="group" aria-label="Focus areas">
+        <ul className="grid" role="group" aria-label="Focus areas">
           {TRACKS.map((t) => {
             const on = focus.includes(t.id);
             const last = on && focus.length === 1;
             return (
-              <button
-                key={t.id}
-                type="button"
-                aria-pressed={on}
-                disabled={last}
-                title={last ? "Keep at least one track on" : undefined}
-                onClick={() => void toggle(t.id)}
-                className={cn(
-                  "press neo-sm inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-bold disabled:cursor-not-allowed",
-                  on ? "text-white" : "bg-surface text-muted",
-                )}
-                style={on ? { background: trackColor(t.id) } : undefined}
-              >
-                <span aria-hidden>{t.emoji}</span>
-                {t.label}
-                {on && <Check className="size-4" strokeWidth={3} aria-hidden />}
-              </button>
+              <li key={t.id} className="rule-soft first:border-t-0">
+                <button
+                  type="button"
+                  aria-pressed={on}
+                  disabled={last}
+                  title={last ? "Keep at least one track on" : undefined}
+                  onClick={() => void toggle(t.id)}
+                  className="group flex min-h-14 w-full cursor-pointer items-center gap-3 py-2 text-left disabled:cursor-not-allowed"
+                >
+                  <TrackGlyph id={t.id} size={14} className={cn("transition", !on && "opacity-35 grayscale")} />
+                  <span className={cn("flex-1 font-semibold transition-colors", on ? "text-ink" : "text-muted")}>{t.label}</span>
+                  {last && <span className="hidden text-xs text-muted sm:inline">keep one on</span>}
+                  <span
+                    className={cn(
+                      "relative h-7 w-12 shrink-0 rounded-full border-2 border-line transition-colors",
+                      on ? "bg-pop" : "bg-surface",
+                    )}
+                    aria-hidden
+                  >
+                    <motion.span
+                      className="absolute top-0.5 left-0.5 size-5 rounded-full border-2 border-line bg-ink"
+                      initial={false}
+                      animate={{ x: on ? 20 : 0 }}
+                      transition={spring.press}
+                    />
+                  </span>
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
       {error && focus !== null && <p className="mt-3 text-sm text-bad">{error}</p>}
     </Section>
@@ -165,24 +189,17 @@ function QueueSection() {
   }, []);
   return (
     <Section
-      icon={<ListOrdered className="size-5" aria-hidden />}
+      id="queue"
       title="Your queue"
-      lede="Queued topics are served first, oldest first. Interview weak spots land here too."
+      lede="Queued topics are served before anything else, top first. Drag to reorder. Interview weak spots land here too."
     >
       {items === null ? (
-        <p className="text-sm text-muted">Loading…</p>
+        <div className="grid gap-2" aria-busy>
+          <Skel className="h-12" />
+          <Skel className="h-12" />
+        </div>
       ) : (
-        <QueuePanel
-          items={items}
-          onAdd={async (title) => {
-            const item = await addToQueue({ title });
-            setItems((q) => (q && q.some((x) => x.id === item.id) ? q : [...(q ?? []), item]));
-          }}
-          onRemove={async (id) => {
-            await removeFromQueue(id);
-            setItems((q) => (q ?? []).filter((x) => x.id !== id));
-          }}
-        />
+        <QueuePanel items={items} setItems={(fn) => setItems((xs) => fn(xs ?? []))} />
       )}
     </Section>
   );
@@ -193,9 +210,9 @@ function PasswordSection() {
   const [next, setNext] = useState("");
   const [state, setState] = useState<{ busy: boolean; saved: boolean; error?: string }>({ busy: false, saved: false });
   return (
-    <Section icon={<KeyRound className="size-5" aria-hidden />} title="Password">
+    <Section title="Password" lede="Changing it keeps you signed in here.">
       <form
-        className="grid gap-5 sm:grid-cols-2"
+        className="grid grid-cols-1 gap-5 sm:grid-cols-2"
         onSubmit={async (e) => {
           e.preventDefault();
           setState({ busy: true, saved: false });
@@ -251,9 +268,8 @@ function DangerSection() {
   const [confirm, setConfirm] = useState(false);
   const [state, setState] = useState<{ busy: boolean; error?: string }>({ busy: false });
   return (
-    <Card className="rounded-3xl border-bad p-6 sm:p-7">
-      <h2 className="font-display text-2xl font-extrabold">Account</h2>
-      <div className="mt-4 flex flex-wrap gap-3">
+    <Section title="Account" lede="Deleting removes your log, streaks, interviews, reports and resume for good.">
+      <div className="flex flex-wrap gap-3">
         <Button variant="ghost" onClick={() => void logout()}>
           <LogOut className="size-4" aria-hidden /> Log out
         </Button>
@@ -281,7 +297,7 @@ function DangerSection() {
           }
         }}
       />
-    </Card>
+    </Section>
   );
 }
 
@@ -289,21 +305,20 @@ export default function SettingsPage() {
   const { user, loading } = useAuth();
   if (loading || !user) return <PageSkeleton />;
   return (
-    <PageShell>
-      <PageTitle
-        title={
-          <>
-            Make it <em className="text-gradient">yours</em>
-          </>
-        }
-      />
-      <div className="grid gap-6">
+    <div className="mx-auto max-w-5xl px-4 pt-8 pb-12 sm:px-6 lg:pt-12">
+      <header className="mb-10">
+        <p className="text-label text-muted">Settings</p>
+        <h1 className="mt-3 text-hero">
+          Make it <CurveUnderline>yours</CurveUnderline>
+        </h1>
+      </header>
+      <div className="grid grid-cols-1 gap-12">
         <FocusSection />
         <QueueSection />
         <ProfileSection />
         <PasswordSection />
         <DangerSection />
       </div>
-    </PageShell>
+    </div>
   );
 }

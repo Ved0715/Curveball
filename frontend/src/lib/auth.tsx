@@ -15,12 +15,18 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/** Set by the login/signup form so the app shell can skip re-fetching the user it just got. */
+let primed: User | null = null;
+export function primeUser(u: User) {
+  primed = u;
+}
+
 /** Loads the signed-in user once; any 401 from the API sends the user to the login screen. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const reset = useStore((s) => s.reset);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(primed);
+  const [loading, setLoading] = useState(!primed);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -31,6 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   useEffect(() => {
+    if (primed) {
+      primed = null;
+      return;
+    }
     let live = true;
     getMe()
       .then((u) => live && setUser(u))

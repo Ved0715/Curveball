@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, CircleCheck, Dumbbell, ListPlus, Wrench } from "lucide-react";
+import { Check, ChevronDown, CircleCheck, ListPlus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState, type ReactNode } from "react";
 import { shortRound, TONE_VAR, toneFor } from "@/lib/format";
@@ -8,19 +8,20 @@ import { SCORE_KEYS, type Report } from "@/lib/schemas";
 import { ScoreBars, ScorePill, ScoreRing } from "./charts";
 import { Confetti } from "./confetti";
 import { Reveal } from "./reveal";
+import { Stamp } from "./brand";
 import { Card, Eyebrow } from "./ui";
 
 function AnswerItem({ a, open: initial }: { a: Report["answers"][number]; open: boolean }) {
   const [open, setOpen] = useState(initial);
   return (
-    <li className="border-t border-line first:border-t-0">
+    <li className="rule-soft first:border-t-0">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="grid w-full cursor-pointer grid-cols-[1fr_auto_auto] items-center gap-3 py-5 text-left"
+        className="group grid w-full cursor-pointer grid-cols-[1fr_auto_auto] items-center gap-3 py-5 text-left"
       >
-        <span className="font-display text-xl leading-snug">{a.question}</span>
+        <span className="text-lg leading-snug font-semibold decoration-2 underline-offset-4 group-hover:underline">{a.question}</span>
         <ScorePill value={a.score} max={10} />
         <ChevronDown className={`size-4 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
@@ -34,19 +35,18 @@ function AnswerItem({ a, open: initial }: { a: Report["answers"][number]; open: 
           >
             <div className="grid gap-4 pb-6 text-sm">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-good/[0.07] p-4">
-                  <p className="mb-1 font-semibold">What worked</p>
+                <div className="border-l-4 border-good pl-4">
+                  <p className="mb-1 text-label text-good">What worked</p>
                   <p className="text-muted">{a.worked}</p>
                 </div>
-                <div className="rounded-2xl bg-bad/[0.06] p-4">
-                  <p className="mb-1 font-semibold">What was missing</p>
+                <div className="border-l-4 border-bad pl-4">
+                  <p className="mb-1 text-label text-bad">What was missing</p>
                   <p className="text-muted">{a.missing}</p>
                 </div>
               </div>
-              <div className="relative overflow-hidden rounded-2xl border border-line p-5">
-                <div className="bg-gradient-brand absolute inset-y-0 left-0 w-1" aria-hidden />
-                <Eyebrow className="mb-2">A stronger answer</Eyebrow>
-                <p className="font-display text-[1.2rem] leading-relaxed">{a.better}</p>
+              <div className="rounded-xl border-2 border-line bg-pop/15 p-5">
+                <p className="mb-2 text-label">A stronger answer</p>
+                <p className="text-[1.05rem] leading-relaxed">{a.better}</p>
               </div>
             </div>
           </motion.div>
@@ -113,7 +113,7 @@ export function ReportView({
 }) {
   const tone = toneFor(report.overall, 100);
   return (
-    <div className="grid grid-cols-1 gap-5">
+    <div className="grid grid-cols-1 gap-12">
       <Confetti fire={celebrate && report.overall >= 75} />
       <Card className="relative overflow-hidden p-6 sm:p-10">
         <div className="relative grid items-center gap-10 md:grid-cols-[auto_1fr]">
@@ -125,10 +125,10 @@ export function ReportView({
               {role}
               {company ? ` · ${company}` : ""} · {shortRound(round)}
             </Eyebrow>
-            <p className="sticker mt-3 bg-surface text-sm" style={{ boxShadow: `3px 3px 0 ${TONE_VAR[tone]}` }}>
+            <Stamp className="mt-4" style={{ color: TONE_VAR[tone], borderColor: TONE_VAR[tone] }}>
               {report.verdict}
-            </p>
-            <p className="mt-4 font-display text-2xl leading-snug font-bold sm:text-[1.6rem]">{report.summary}</p>
+            </Stamp>
+            <p className="mt-5 text-title">{report.summary}</p>
           </div>
         </div>
         <div className="relative mt-10 max-w-2xl">
@@ -136,10 +136,10 @@ export function ReportView({
         </div>
       </Card>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-10">
         <Reveal>
-          <Card className="h-full p-6 sm:p-8">
-            <h2 className="font-display text-3xl font-extrabold tracking-tight">What worked</h2>
+          <section className="rule h-full pt-5">
+            <h2 className="text-headline">What worked</h2>
             <ul className="mt-5 grid gap-4">
               {report.strengths.map((s) => (
                 <li key={s} className="flex gap-3">
@@ -148,11 +148,11 @@ export function ReportView({
                 </li>
               ))}
             </ul>
-          </Card>
+          </section>
         </Reveal>
         <Reveal delay={0.06}>
-          <Card className="h-full p-6 sm:p-8">
-            <h2 className="font-display text-3xl font-extrabold tracking-tight">Fix these first</h2>
+          <section className="rule h-full pt-5">
+            <h2 className="text-headline">Fix these first</h2>
             <ol className="mt-5 grid gap-4">
               {report.fixes.map((f, i) => (
                 <li key={f.issue} className="flex gap-3">
@@ -165,16 +165,13 @@ export function ReportView({
                 </li>
               ))}
             </ol>
-          </Card>
+          </section>
         </Reveal>
       </div>
 
       <Reveal>
-        <Card className="p-6 sm:p-8">
-          <div className="flex items-center gap-3">
-            <Wrench className="size-5 text-accent" aria-hidden />
-            <h2 className="font-display text-3xl font-extrabold tracking-tight">Answer by answer</h2>
-          </div>
+        <section className="rule pt-5">
+          <h2 className="text-headline">Answer by answer</h2>
           {report.answers.length ? (
             <ul className="mt-3">
               {report.answers.map((a, i) => (
@@ -184,28 +181,25 @@ export function ReportView({
           ) : (
             <p className="mt-4 text-muted">No answers were scored.</p>
           )}
-        </Card>
+        </section>
       </Reveal>
 
       <Reveal>
-        <Card className="p-6 sm:p-8">
-          <div className="flex items-center gap-3">
-            <Dumbbell className="size-5 text-accent" aria-hidden />
-            <h2 className="font-display text-3xl font-extrabold tracking-tight">Practise before next time</h2>
-          </div>
+        <section className="rule pt-5">
+          <h2 className="text-headline">Practise before next time</h2>
           <ul className="mt-5 grid gap-3 md:grid-cols-3">
             {report.drills.map((d, i) => (
-              <li key={d} className="rounded-2xl border-2 border-line-soft bg-surface p-4 text-sm">
-                <span className="font-mono text-xs text-muted">Drill {i + 1}</span>
+              <li key={d} className="border-l-4 border-pop pl-4 text-sm">
+                <span className="text-label text-muted">Drill {i + 1}</span>
                 <p className="mt-1">{d}</p>
                 {onQueue && <QueueButton onQueue={() => onQueue(d.slice(0, 200), "A drill from your mock interview.")} />}
               </li>
             ))}
           </ul>
-        </Card>
+        </section>
       </Reveal>
 
-      {actions && <div className="mt-4 flex flex-col gap-3 sm:flex-row">{actions}</div>}
+      {actions && <div className="rule flex flex-col gap-3 pt-6 sm:flex-row">{actions}</div>}
     </div>
   );
 }

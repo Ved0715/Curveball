@@ -4,6 +4,7 @@ import { Pencil, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { CurveUnderline } from "@/components/brand";
 import { PageTitle } from "@/components/page-shell";
 import { ReportView } from "@/components/report-view";
 import { SessionGate } from "@/components/session-gate";
@@ -50,10 +51,10 @@ function ReportFlow({ session }: { session: Session }) {
     return (
       <>
         <PageTitle
-          step="Step 4 of 4 · Report"
+          step="Practice · Report"
           title={
             <>
-              How it <em className="text-gradient">went</em>
+              How it <CurveUnderline>went</CurveUnderline>
             </>
           }
         />
@@ -73,7 +74,7 @@ function ReportFlow({ session }: { session: Session }) {
               </Button>
               <Link
                 href="/practice"
-                className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-line bg-surface px-7 font-medium transition hover:bg-surface-strong"
+                className="press neo-sm inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-surface px-7 font-semibold"
               >
                 <Pencil className="size-4" aria-hidden /> Change setup
               </Link>
@@ -95,7 +96,7 @@ function ReportFlow({ session }: { session: Session }) {
           title="No report yet"
           lede="Finish the interview (or end it early after answering at least one question) to get scored."
         />
-        <Link href="/practice/interview" className="font-semibold text-accent underline underline-offset-4">
+        <Link href="/practice/interview" className="link font-semibold">
           Back to the interview
         </Link>
       </>
@@ -104,7 +105,7 @@ function ReportFlow({ session }: { session: Session }) {
   if (state.status === "error" || state.status === "stopped")
     return (
       <div className="mx-auto max-w-2xl">
-        <PageTitle step="Step 4 of 4 · Report" title="Report not ready" />
+        <PageTitle step="Practice · Report" title="Report not ready" />
         <ErrorPanel
           message={state.status === "stopped" ? "You stopped scoring before it finished." : friendlyError(state.error)}
           onRetry={run}

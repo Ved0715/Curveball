@@ -61,13 +61,14 @@ test("daily loop: topic → lesson → reflection → learned → progress → s
   await page.getByRole("button", { name: /Mark as learned/ }).click();
   await page.getByLabel(/What clicked today/).fill("Two pointers turn nested loops into one pass.");
   await page.getByRole("button", { name: /Done for today/ }).click();
-  await expect(page.getByText("Done for today. New topic tomorrow")).toBeVisible();
+  await expect(page.getByText(/Next topic in/)).toBeVisible();
   await expect(page.getByText("Two pointers turn nested loops into one pass.")).toBeVisible();
   await expect(page.locator('[aria-label="1-day learning streak"]:visible').first()).toBeVisible();
 
   await page.getByRole("link", { name: "Progress" }).first().click();
   await expect(page.getByRole("heading", { name: /Your curve/ })).toBeVisible();
-  await expect(page.getByText("20 / 50 XP")).toBeVisible(); // learned 10 + reflection 5 + check 5
+  // learned 10 + reflection 5 + check 5
+  await expect(page.getByRole("progressbar", { name: /Level 1 progress/ })).toHaveAttribute("aria-valuenow", "20");
   await expect(page.getByText("Two pointers turn nested loops into one pass.")).toBeVisible();
   await expectNoHorizontalScroll(page);
 
@@ -121,7 +122,7 @@ test("practice loop: interview → report → weak spot lands in the learning qu
   await expectNoHorizontalScroll(page);
 
   await page.getByRole("link", { name: "Today" }).first().click();
-  await expect(page.getByText("from interview").first()).toBeVisible();
+  await expect(page.getByText("from your interview").first()).toBeVisible();
   await page.getByRole("link", { name: "Progress" }).first().click();
   await expect(page.getByText("Backend Engineer at Razorpay")).toBeVisible();
 });

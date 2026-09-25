@@ -38,19 +38,22 @@ function subscribe(cb: () => void) {
 const ORDER: Pref[] = ["system", "light", "dark"];
 const ICONS = { system: Monitor, light: Sun, dark: Moon };
 
+/** Move to the next theme preference (system → light → dark). Returns the new one. */
+export function cycleTheme(): Pref {
+  const next = ORDER[(ORDER.indexOf(readPref()) + 1) % ORDER.length];
+  try {
+    localStorage.setItem(KEY, next);
+  } catch {
+    /* storage blocked: still switch for this page view */
+  }
+  apply(next);
+  listeners.forEach((l) => l());
+  return next;
+}
+
 export function ThemeToggle() {
   const pref = useSyncExternalStore<Pref>(subscribe, readPref, () => "system");
-
-  const cycle = useCallback(() => {
-    const next = ORDER[(ORDER.indexOf(readPref()) + 1) % ORDER.length];
-    try {
-      localStorage.setItem(KEY, next);
-    } catch {
-      /* storage blocked: still switch for this page view */
-    }
-    apply(next);
-    listeners.forEach((l) => l());
-  }, []);
+  const cycle = useCallback(() => void cycleTheme(), []);
 
   const Icon = ICONS[pref];
   return (

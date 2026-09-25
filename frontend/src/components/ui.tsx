@@ -128,7 +128,7 @@ export function Segmented<T extends string | number>({
 }) {
   const id = useId();
   return (
-    <fieldset className="flex flex-col gap-2">
+    <fieldset className="flex min-w-0 flex-col gap-2">
       <legend className={hideLabel ? "sr-only" : "mb-2 text-sm font-semibold"}>{label}</legend>
       <div className="flex flex-wrap gap-1.5 rounded-2xl border-2 border-line bg-surface p-1.5">
         {options.map((opt) => {
@@ -137,7 +137,7 @@ export function Segmented<T extends string | number>({
             <label
               key={String(opt)}
               className={cn(
-                "relative flex-1 cursor-pointer rounded-xl px-3.5 py-2 text-center text-sm font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
+                "relative flex-1 cursor-pointer rounded-xl px-2.5 py-2 text-center text-sm font-medium whitespace-nowrap transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus",
                 selected ? "text-pop-ink" : "text-muted hover:text-ink",
               )}
             >

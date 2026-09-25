@@ -4,15 +4,15 @@ export const TAGLINE = "Learn something every day. Handle any curveball.";
 
 export type TrackId = "dsa" | "system-design" | "lang-depth" | "fundamentals" | "real-world" | "custom";
 
-export const TRACKS: { id: TrackId; label: string; short: string; emoji: string }[] = [
-  { id: "dsa", label: "Data Structures & Algorithms", short: "DSA", emoji: "🧩" },
-  { id: "system-design", label: "System Design", short: "System design", emoji: "🏗️" },
-  { id: "lang-depth", label: "Language & Runtime Depth", short: "Language depth", emoji: "⚙️" },
-  { id: "fundamentals", label: "CS Fundamentals", short: "Fundamentals", emoji: "📚" },
-  { id: "real-world", label: "Real-World & Situational", short: "Real-world", emoji: "🔥" },
+export const TRACKS: { id: TrackId; label: string; short: string }[] = [
+  { id: "dsa", label: "Data Structures & Algorithms", short: "DSA" },
+  { id: "system-design", label: "System Design", short: "System design" },
+  { id: "lang-depth", label: "Language & Runtime Depth", short: "Language depth" },
+  { id: "fundamentals", label: "CS Fundamentals", short: "Fundamentals" },
+  { id: "real-world", label: "Real-World & Situational", short: "Real-world" },
 ];
 
-export const CUSTOM_TRACK = { id: "custom" as const, label: "Your pick", short: "Your pick", emoji: "✨" };
+export const CUSTOM_TRACK = { id: "custom" as const, label: "Your pick", short: "Your pick" };
 
 export function track(id: string) {
   return TRACKS.find((t) => t.id === id) ?? CUSTOM_TRACK;

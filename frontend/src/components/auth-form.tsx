@@ -3,8 +3,9 @@
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { login, signup } from "@/lib/api";
+import { primeUser } from "@/lib/auth";
 import { BRAND } from "@/lib/brand";
 import { friendlyError } from "@/lib/errors";
 import { LogoMark } from "./logo";
@@ -22,6 +23,12 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const isSignup = mode === "signup";
+  const next = safeNext(params.get("next"));
+
+  // Load the destination's code while the user types, so the hop after login is instant.
+  useEffect(() => {
+    router.prefetch(next);
+  }, [router, next]);
 
   // Inputs are uncontrolled and read on submit, so anything typed before the page finished
   // loading is kept (a controlled input would be reset when React takes over).
@@ -34,14 +41,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     setBusy(true);
     setError(undefined);
     try {
-      if (isSignup) {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
-        await signup({ name, email, password, timezone });
-      } else {
-        await login({ email, password });
-      }
-      router.replace(safeNext(params.get("next")));
-      router.refresh();
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
+      primeUser(isSignup ? await signup({ name, email, password, timezone }) : await login({ email, password }));
+      router.replace(next);
     } catch (err) {
       setError(friendlyError(err));
       setBusy(false);

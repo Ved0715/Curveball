@@ -19,10 +19,12 @@ import { ConfirmDialog } from "@/components/dialog";
 import { InterviewerOrb, Waveform, type OrbMode } from "@/components/orb";
 import { SessionGate } from "@/components/session-gate";
 import { ErrorPanel } from "@/components/status";
+import { Stamp } from "@/components/brand";
 import { Button, Card, Kbd } from "@/components/ui";
 import { deleteSession, endSession, streamHint } from "@/lib/api";
 import { friendlyError } from "@/lib/errors";
 import { cn, formatClock, shortRound } from "@/lib/format";
+import { spring } from "@/lib/motion";
 import { useMicLevels, useSpeechRecognition, useSpeechSynthesis } from "@/lib/speech";
 import type { Session } from "@/lib/schemas";
 import { answeredCount, useStore } from "@/lib/store";
@@ -37,12 +39,18 @@ function Progress({ iv }: { iv: Session }) {
         const done = iv.state.done || i < k - 1;
         const current = !iv.state.done && i === k - 1;
         return (
-          <div key={i} className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-strong">
+          <div
+            key={i}
+            className={cn(
+              "h-2.5 flex-1 overflow-hidden rounded-full border-2 bg-surface transition-colors",
+              done || current ? "border-line" : "border-line-soft",
+            )}
+          >
             <motion.div
-              className="bg-gradient-brand h-full rounded-full"
+              className="h-full origin-left bg-pop"
               initial={false}
-              animate={{ width: done ? "100%" : current ? "50%" : "0%" }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              animate={{ scaleX: done ? 1 : current ? 0.5 : 0 }}
+              transition={spring.gentle}
             />
           </div>
         );
@@ -178,7 +186,6 @@ function Room({ iv }: { iv: Session }) {
 
       {/* Stage */}
       <Card className="relative mt-6 overflow-hidden p-6 sm:p-10">
-        <div className="bg-gradient-brand pointer-events-none absolute -top-32 left-1/2 size-72 -translate-x-1/2 rounded-full opacity-[0.12] blur-3xl" />
         <div className="relative flex items-center gap-4">
           <InterviewerOrb mode={mode} initial={iv.interviewer[0]} size={64} />
           <div>
@@ -209,12 +216,12 @@ function Room({ iv }: { iv: Session }) {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="mt-2 flex gap-3 rounded-2xl border border-accent/25 bg-accent/[0.07] p-4 text-sm" aria-live="polite">
-                <Lightbulb className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+              <div className="mt-2 flex gap-3 rounded-xl border-2 border-dashed border-line bg-pop/15 p-4 text-sm" aria-live="polite">
+                <Lightbulb className="mt-0.5 size-4 shrink-0" aria-hidden />
                 <p className="flex-1 whitespace-pre-wrap">
                   {hint.error ?? (hint.text || <span className="shimmer-text">Thinking of a nudge…</span>)}
                 </p>
-                <button type="button" onClick={() => setHint(null)} aria-label="Close hint" className="text-muted hover:text-ink">
+                <button type="button" onClick={() => setHint(null)} aria-label="Close hint" className="-m-2 grid size-9 cursor-pointer place-items-center rounded-lg text-muted hover:text-ink">
                   <X className="size-4" />
                 </button>
               </div>
@@ -234,7 +241,8 @@ function Room({ iv }: { iv: Session }) {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
           <Card className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
             <div>
-              <h2 className="font-display text-3xl tracking-tight">That&apos;s a wrap.</h2>
+              <Stamp className="mb-4">Finished</Stamp>
+              <h2 className="text-title">That&apos;s a wrap.</h2>
               <p className="text-muted">
                 You answered {answered} question{answered === 1 ? "" : "s"}. Let&apos;s see how it went.
               </p>
@@ -268,7 +276,7 @@ function Room({ iv }: { iv: Session }) {
               }
             }}
             placeholder="Answer as you would out loud…"
-            className="w-full resize-y rounded-2xl border border-line bg-bg/60 p-4 leading-relaxed outline-none transition focus:border-accent/60 focus:bg-bg disabled:opacity-60"
+            className="w-full resize-y rounded-xl border-2 border-line bg-bg p-4 leading-relaxed outline-none transition focus:shadow-[4px_4px_0_var(--pop)] disabled:opacity-60"
           />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -319,6 +327,7 @@ function Room({ iv }: { iv: Session }) {
         <details className="group mt-8">
           <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-muted hover:text-ink">
             <ScrollText className="size-4" aria-hidden /> Transcript ({iv.turns.length} turns)
+            <span className="text-xs transition-transform group-open:rotate-90" aria-hidden>▸</span>
           </summary>
           <ol className="mt-4 grid gap-3">
             {iv.turns.map((t, i) => (
@@ -326,10 +335,10 @@ function Room({ iv }: { iv: Session }) {
                 key={i}
                 className={cn(
                   "max-w-[85%] rounded-2xl p-4 text-sm",
-                  t.speaker === "candidate" ? "ml-auto bg-accent/[0.09]" : "bg-surface",
+                  t.speaker === "candidate" ? "ml-auto border-2 border-line bg-pop/20" : "border-2 border-line-soft bg-surface",
                 )}
               >
-                <p className="mb-1 font-mono text-[0.7rem] uppercase tracking-wider text-muted">
+                <p className="mb-1 text-label text-muted">
                   {t.speaker === "candidate" ? "You" : iv.interviewer}
                   {t.answer_seconds ? ` · ${formatClock(t.answer_seconds)}` : ""}
                 </p>

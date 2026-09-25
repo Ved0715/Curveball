@@ -76,7 +76,15 @@ async function call<T>(path: string, init: RequestInit, schema: z.ZodType<T> | n
   }
 }
 
-const get = <T>(path: string, schema: z.ZodType<T>) => call(path, { method: "GET" }, schema);
+/** Identical GETs already in flight share one request (the shell and a page often ask at once). */
+const inflight = new Map<string, Promise<unknown>>();
+function get<T>(path: string, schema: z.ZodType<T>): Promise<T> {
+  const pending = inflight.get(path);
+  if (pending) return pending as Promise<T>;
+  const p = call(path, { method: "GET" }, schema).finally(() => inflight.delete(path));
+  inflight.set(path, p);
+  return p;
+}
 const send = <T>(method: string, path: string, body: unknown, schema: z.ZodType<T> | null) =>
   call<T>(path, { method, body: body === undefined ? undefined : JSON.stringify(body) }, schema);
 
@@ -160,6 +168,9 @@ export const putPrefs = (focus_areas: string[]) => send("PUT", "/api/learn/prefe
 export const getQueue = () => get<QueueItem[]>("/api/learn/queue", QueueItemSchema.array());
 export const addToQueue = (item: { title: string; blurb?: string; source?: "manual" | "interview"; session_id?: string }) =>
   send<QueueItem>("POST", "/api/learn/queue", item, QueueItemSchema);
+/** Set queue order: first id is learned next. */
+export const reorderQueue = (ids: string[]) =>
+  send<QueueItem[]>("PUT", "/api/learn/queue/order", { ids }, QueueItemSchema.array());
 export const removeFromQueue = (id: string) =>
   send<void>("DELETE", `/api/learn/queue/${encodeURIComponent(id)}`, undefined, null);
 export const getProgress = () => get<Progress>("/api/progress", ProgressSchema);

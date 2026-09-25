@@ -10,7 +10,8 @@ import { SessionGate } from "@/components/session-gate";
 import { ResumeProfileCard } from "@/components/resume-profile";
 import { Reveal } from "@/components/reveal";
 import { ErrorPanel, StreamingPanel } from "@/components/status";
-import { Button, Card, Chip, Eyebrow } from "@/components/ui";
+import { CurveUnderline } from "@/components/brand";
+import { Button, Chip } from "@/components/ui";
 import { getSession, streamBrief } from "@/lib/api";
 import { friendlyError } from "@/lib/errors";
 import { shortRound, streamPercent } from "@/lib/format";
@@ -27,11 +28,11 @@ const CONFIDENCE = {
 function Section({ title, eyebrow, children, delay = 0 }: { title: string; eyebrow?: string; children: ReactNode; delay?: number }) {
   return (
     <Reveal delay={delay}>
-      <Card className="p-6 sm:p-8">
-        {eyebrow && <Eyebrow className="mb-2">{eyebrow}</Eyebrow>}
-        <h2 className="font-display text-3xl tracking-tight">{title}</h2>
+      <section className="rule min-w-0 pt-5">
+        {eyebrow && <p className="mb-1.5 text-label text-muted">{eyebrow}</p>}
+        <h2 className="text-headline">{title}</h2>
         <div className="mt-5">{children}</div>
-      </Card>
+      </section>
     </Reveal>
   );
 }
@@ -39,15 +40,15 @@ function Section({ title, eyebrow, children, delay = 0 }: { title: string; eyebr
 function QuestionCard({ n, q }: { n: number; q: Brief["questions"][number] }) {
   const [open, setOpen] = useState(n === 1);
   return (
-    <li className="border-t border-line first:border-t-0">
+    <li className="rule-soft first:border-t-0">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="grid w-full cursor-pointer grid-cols-[2.25rem_1fr_auto] items-start gap-3 py-4 text-left"
+        className="group grid w-full cursor-pointer grid-cols-[2.25rem_1fr_auto] items-start gap-3 py-4 text-left"
       >
-        <span className="text-gradient font-display text-2xl leading-tight">{n}</span>
-        <span className="font-display text-xl leading-snug">{q.q}</span>
+        <span className="pt-1 font-mono text-sm font-semibold text-muted">{String(n).padStart(2, "0")}</span>
+        <span className="text-lg leading-snug font-semibold group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">{q.q}</span>
         <ChevronDown className={`mt-1.5 size-4 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
       <AnimatePresence initial={false}>
@@ -59,13 +60,13 @@ function QuestionCard({ n, q }: { n: number; q: Brief["questions"][number] }) {
             className="overflow-hidden"
           >
             <div className="grid gap-3 pb-5 pl-12 text-sm sm:grid-cols-2">
-              <div className="rounded-2xl bg-surface p-4">
-                <p className="mb-1 font-semibold">What they&apos;re testing</p>
+              <div className="rounded-xl border-2 border-line-soft p-4">
+                <p className="mb-1 text-label text-muted">What they&apos;re testing</p>
                 <p className="text-muted">{q.why}</p>
               </div>
-              <div className="rounded-2xl bg-accent/[0.08] p-4">
-                <p className="mb-1 font-semibold">Your angle</p>
-                <p className="text-muted">{q.tip}</p>
+              <div className="rounded-xl border-2 border-line bg-pop/20 p-4">
+                <p className="mb-1 text-label">Your angle</p>
+                <p>{q.tip}</p>
               </div>
             </div>
           </motion.div>
@@ -80,10 +81,10 @@ function BriefView({ session, brief, onStart }: { session: Session; brief: Brief
   return (
     <>
       <PageTitle
-        step="Step 2 of 4 · Prep brief"
+        step="Practice · Prep brief"
         title={
           <>
-            Your <em className="text-gradient">prep brief</em>
+            Your <CurveUnderline>prep brief</CurveUnderline>
           </>
         }
         lede={`${setup.role}${setup.company ? ` at ${setup.company}` : ""}, ${shortRound(setup.round).toLowerCase()} round. Read it once, then start the interview.`}
@@ -93,7 +94,7 @@ function BriefView({ session, brief, onStart }: { session: Session; brief: Brief
         </Button>
       </PageTitle>
 
-      <div className="grid grid-cols-1 gap-5">
+      <div className="grid grid-cols-1 gap-12">
         <ResumeProfileCard profile={session.resume_profile} hasResume={!!setup.resume.trim()} />
         <Section title={setup.company || "The company"} eyebrow="Company">
           <p className="max-w-3xl">{brief.company.summary}</p>
@@ -115,13 +116,13 @@ function BriefView({ session, brief, onStart }: { session: Session; brief: Brief
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.06 }}
               >
-                <Chip className="bg-surface-strong">{f}</Chip>
+                <Chip>{f}</Chip>
               </motion.span>
             ))}
           </div>
         </Section>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-10">
           <Section title="Where you're strong">
             <ul className="grid gap-4">
               {brief.strengths.map((s) => (
@@ -158,12 +159,12 @@ function BriefView({ session, brief, onStart }: { session: Session; brief: Brief
           </ol>
         </Section>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-10">
           <Section title="Stories to have ready">
             <ul className="grid gap-3">
               {brief.stories.map((s) => (
-                <li key={s.theme} className="rounded-2xl bg-surface p-4">
-                  <p className="font-mono text-xs uppercase tracking-wider text-accent">{s.theme}</p>
+                <li key={s.theme} className="border-l-4 border-pop pl-4">
+                  <p className="text-label">{s.theme}</p>
                   <p className="mt-1 text-sm">{s.use}</p>
                 </li>
               ))}
@@ -172,8 +173,8 @@ function BriefView({ session, brief, onStart }: { session: Session; brief: Brief
           <Section title="Questions to ask them" delay={0.05}>
             <ul className="grid gap-3">
               {brief.askThem.map((q) => (
-                <li key={q} className="flex gap-3 text-sm">
-                  <span className="text-gradient font-display text-xl leading-none">?</span>
+                <li key={q} className="flex items-start gap-3 text-sm">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full border-2 border-line bg-pop font-display text-sm font-extrabold text-pop-ink">?</span>
                   {q}
                 </li>
               ))}
@@ -182,13 +183,13 @@ function BriefView({ session, brief, onStart }: { session: Session; brief: Brief
         </div>
       </div>
 
-      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+      <div className="rule mt-12 flex flex-col gap-3 pt-6 sm:flex-row">
         <Button size="lg" onClick={onStart}>
           Start the mock interview <ArrowRight className="size-4" aria-hidden />
         </Button>
         <Link
           href="/practice"
-          className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-line bg-surface px-7 font-medium transition hover:bg-surface-strong"
+          className="press neo-sm inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-surface px-7 font-semibold"
         >
           <Pencil className="size-4" aria-hidden /> Edit setup
         </Link>
@@ -221,7 +222,7 @@ function BriefFlow({ session }: { session: Session }) {
   if (state.status === "error" || state.status === "stopped")
     return (
       <div className="mx-auto max-w-2xl">
-        <PageTitle step="Step 2 of 4 · Prep brief" title="Brief not ready" />
+        <PageTitle step="Practice · Prep brief" title="Brief not ready" />
         <ErrorPanel
           message={state.status === "stopped" ? "You stopped the brief before it finished." : friendlyError(state.error)}
           onRetry={state.status === "stopped" || state.error.retryable ? run : undefined}

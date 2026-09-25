@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarCheck2, ChartNoAxesColumn, Flame, LogOut, Mic, Settings } from "lucide-react";
+import { CalendarCheck2, ChartNoAxesColumn, Flame, LogOut, Mic, Search, Settings } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,32 +8,31 @@ import { useEffect } from "react";
 import { getToday } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/format";
+import { spring } from "@/lib/motion";
 import { useStore } from "@/lib/store";
+import { AnimatedNumber } from "./animated-number";
+import { Ball } from "./brand";
+import { useCommandPalette } from "./command";
 import { Logo } from "./logo";
 import { ThemeToggle } from "./theme";
+import { Kbd } from "./ui";
 
 /* ---------- Public site header ---------- */
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b-2 border-line bg-bg/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b-2 border-line bg-bg/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Logo />
-        <div className="flex items-center gap-2">
+        <nav className="flex items-center gap-1.5">
           <ThemeToggle />
-          <Link
-            href="/login"
-            className="hidden h-10 items-center rounded-xl px-3 text-sm font-semibold transition hover:bg-surface sm:flex"
-          >
+          <Link href="/login" className="link hidden px-3 py-2 text-sm font-semibold sm:block">
             Log in
           </Link>
-          <Link
-            href="/signup"
-            className="press neo-sm flex h-10 items-center rounded-xl bg-pop px-4 text-sm font-bold text-pop-ink"
-          >
+          <Link href="/signup" className="press neo-sm flex h-10 items-center rounded-xl bg-pop px-4 text-sm font-bold text-pop-ink">
             Start free
           </Link>
-        </div>
+        </nav>
       </div>
     </header>
   );
@@ -52,7 +51,8 @@ function isActive(path: string, href: string) {
   return path === href || path.startsWith(`${href}/`);
 }
 
-function StreakChip({ compact = false }: { compact?: boolean }) {
+/** Keeps the streak in the chrome in sync; the Today page updates it after completion. */
+function useStreak() {
   const streak = useStore((s) => s.streak);
   const setStreak = useStore((s) => s.setStreak);
   useEffect(() => {
@@ -63,32 +63,65 @@ function StreakChip({ compact = false }: { compact?: boolean }) {
         /* the page shows its own errors */
       });
   }, [streak, setStreak]);
-  const n = streak ?? 0;
+  return streak ?? 0;
+}
+
+function StreakFlame({ on, className }: { on: boolean; className?: string }) {
+  return <Flame className={cn(on ? "fill-[var(--sun)] text-[var(--track-dsa)]" : "text-muted", className)} aria-hidden />;
+}
+
+function StreakChip() {
+  const n = useStreak();
   return (
     <span
-      className={cn(
-        "neo-sm inline-flex items-center gap-1.5 rounded-full bg-surface font-bold",
-        compact ? "px-2.5 py-1 text-sm" : "px-3 py-1.5",
-      )}
-      title={`${n}-day learning streak`}
+      className="inline-flex h-9 items-center gap-1 rounded-full border-2 border-line bg-surface px-2.5 text-sm font-bold"
       aria-label={`${n}-day learning streak`}
+      role="img"
     >
-      <Flame className={cn("size-4", n > 0 ? "fill-[var(--sun)] text-[var(--track-dsa)]" : "text-muted")} aria-hidden />
-      <span className="tabular-nums">{n}</span>
+      <StreakFlame on={n > 0} className="size-4" />
+      <AnimatedNumber value={n} />
     </span>
+  );
+}
+
+function SearchButton({ compact = false }: { compact?: boolean }) {
+  const open = useCommandPalette();
+  return compact ? (
+    <button
+      type="button"
+      onClick={open}
+      aria-label="Search and jump (Ctrl K)"
+      className="press neo-sm grid size-10 cursor-pointer place-items-center rounded-xl bg-surface"
+    >
+      <Search className="size-[18px]" />
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={open}
+      className="flex h-11 w-full cursor-pointer items-center gap-2.5 rounded-xl border-2 border-line-soft px-3 text-sm text-muted transition hover:border-line hover:text-ink"
+    >
+      <Search className="size-4" aria-hidden />
+      <span className="flex-1 text-left">Jump to…</span>
+      <Kbd>⌘K</Kbd>
+    </button>
   );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { user, logout } = useAuth();
+  const streak = useStreak();
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r-2 border-line bg-bg-2/70 p-5 lg:flex">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[252px_1fr]">
+      {/* Desktop sidebar: type-led, the ball marks where you are */}
+      <aside className="sticky top-0 hidden h-dvh flex-col border-r-2 border-line px-5 py-6 lg:flex">
         <Logo href="/today" />
-        <nav aria-label="Main" className="mt-10 flex flex-col gap-2">
+        <div className="mt-8">
+          <SearchButton />
+        </div>
+        <nav aria-label="Main" className="mt-6 flex flex-col">
           {NAV.map((n) => {
             const active = isActive(path, n.href);
             return (
@@ -97,43 +130,68 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={n.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 font-semibold transition",
-                  active ? "neo-sm bg-pop text-pop-ink" : "text-muted hover:bg-surface hover:text-ink",
+                  "group relative flex items-center gap-3 rounded-xl py-2.5 pr-3 pl-10 text-[1.05rem] font-semibold transition-colors",
+                  active ? "text-ink" : "text-muted hover:text-ink",
                 )}
               >
-                <n.icon className="size-[18px]" aria-hidden />
-                {n.label}
+                {active && (
+                  <motion.span layoutId="nav-ball" className="absolute left-1.5" transition={spring.snappy}>
+                    <motion.span
+                      className="block"
+                      key={n.href}
+                      initial={{ rotate: -140 }}
+                      animate={{ rotate: 0 }}
+                      transition={spring.gentle}
+                    >
+                      <Ball size={20} />
+                    </motion.span>
+                  </motion.span>
+                )}
+                <n.icon className="size-[18px] transition-transform group-hover:-rotate-6" aria-hidden />
+                <span className="transition-transform group-hover:translate-x-0.5">{n.label}</span>
               </Link>
             );
           })}
         </nav>
-        <div className="mt-auto flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <StreakChip />
-            <ThemeToggle />
+
+        <div className="mt-auto">
+          <div className="rule-soft pt-5">
+            <p className="text-label text-muted">Streak</p>
+            <p className="mt-1 flex items-center gap-2" role="img" aria-label={`${streak}-day learning streak`}>
+              <StreakFlame on={streak > 0} className="size-7" />
+              <AnimatedNumber value={streak} className="text-display leading-none" />
+              <span className="self-end pb-1 text-sm text-muted">{streak === 1 ? "day" : "days"}</span>
+            </p>
           </div>
-          {user && (
-            <div className="neo bg-surface rounded-2xl p-3">
-              <p className="truncate font-semibold">{user.name}</p>
-              <p className="truncate text-xs text-muted">{user.email}</p>
+          <div className="rule-soft mt-5 flex items-center gap-3 pt-4">
+            <span
+              className="grid size-9 shrink-0 place-items-center rounded-full border-2 border-line bg-pop font-display font-extrabold text-pop-ink"
+              aria-hidden
+            >
+              {user?.name.slice(0, 1).toUpperCase() ?? "·"}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{user?.name ?? " "}</p>
               <button
                 type="button"
                 onClick={() => void logout()}
-                className="mt-2 inline-flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink"
+                className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-muted hover:text-ink"
               >
-                <LogOut className="size-3.5" aria-hidden /> Log out
+                <LogOut className="size-3" aria-hidden /> Log out
               </button>
             </div>
-          )}
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 
       <div className="min-w-0">
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b-2 border-line bg-bg/90 px-4 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b-2 border-line bg-bg/85 px-4 backdrop-blur-md lg:hidden">
           <Logo href="/today" />
           <div className="flex items-center gap-2">
-            <StreakChip compact />
+            <StreakChip />
+            <SearchButton compact />
             <ThemeToggle />
           </div>
         </header>
@@ -143,7 +201,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile bottom tabs */}
         <nav
           aria-label="Main"
-          className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t-2 border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t-2 border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
         >
           {NAV.map((n) => {
             const active = isActive(path, n.href);
@@ -153,19 +211,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={n.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex flex-col items-center gap-0.5 py-2.5 text-[0.7rem] font-bold",
+                  "relative flex flex-col items-center gap-1 pt-2.5 pb-2 text-[0.7rem] font-bold",
                   active ? "text-ink" : "text-muted",
                 )}
               >
-                {active && (
+                <span className="relative grid h-8 w-14 place-items-center">
+                  {active && (
+                    <motion.span
+                      layoutId="tab-pill"
+                      className="absolute inset-0 rounded-full border-2 border-line bg-pop"
+                      transition={spring.snappy}
+                    />
+                  )}
                   <motion.span
-                    layoutId="tab-pill"
-                    className="absolute inset-x-3 top-1.5 bottom-1.5 rounded-xl border-2 border-line bg-pop"
-                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
-                  />
-                )}
-                <n.icon className="relative size-5" aria-hidden />
-                <span className={cn("relative", active && "text-pop-ink")}>{n.label}</span>
+                    className="relative"
+                    animate={{ y: active ? -1 : 0, scale: active ? 1.08 : 1 }}
+                    transition={spring.press}
+                  >
+                    <n.icon className={cn("size-5", active && "text-pop-ink")} aria-hidden />
+                  </motion.span>
+                </span>
+                {n.label}
               </Link>
             );
           })}
@@ -178,12 +244,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 /* ---------- Practice step bar ---------- */
 
 const STEPS = [
-  { href: "/practice", label: "Set up", n: 1 },
-  { href: "/practice/brief", label: "Brief", n: 2 },
-  { href: "/practice/interview", label: "Interview", n: 3 },
-  { href: "/practice/report", label: "Report", n: 4 },
+  { href: "/practice", label: "Set up" },
+  { href: "/practice/brief", label: "Brief" },
+  { href: "/practice/interview", label: "Interview" },
+  { href: "/practice/report", label: "Report" },
 ] as const;
 
+/** Where you are in the interview flow: a track with the ball at your step. */
 export function PracticeSteps() {
   const path = usePathname();
   const session = useStore((s) => s.session);
@@ -193,36 +260,52 @@ export function PracticeSteps() {
     "/practice/interview": !!session && !session.state.done,
     "/practice/report": !!session?.state.done,
   };
+  const current = Math.max(
+    0,
+    STEPS.findIndex((s) => s.href === path),
+  );
   return (
     <nav aria-label="Practice steps" className="mx-auto max-w-4xl px-4 pt-6 sm:px-6">
-      <ol className="flex flex-wrap gap-2">
-        {STEPS.map((s) => {
-          const active = path === s.href;
+      <ol className="relative grid grid-cols-4">
+        <span className="absolute top-[11px] right-[12.5%] left-[12.5%] h-0.5 bg-line-soft" aria-hidden />
+        <motion.span
+          className="absolute top-[11px] left-[12.5%] h-0.5 w-3/4 origin-left bg-line"
+          initial={false}
+          animate={{ scaleX: current / 3 }}
+          transition={spring.gentle}
+          aria-hidden
+        />
+        {STEPS.map((s, i) => {
+          const active = i === current;
+          const done = i < current;
           const on = enabled[s.href];
-          const inner = (
-            <>
-              <span className="font-mono text-xs">{s.n}</span> {s.label}
-            </>
+          const dot = (
+            <span className="relative grid size-6 place-items-center">
+              {active ? (
+                <motion.span layoutId="step-ball" transition={spring.snappy}>
+                  <Ball size={24} />
+                </motion.span>
+              ) : (
+                <span className={cn("size-3 rounded-full border-2", done ? "border-line bg-line" : "border-line-soft bg-bg")} />
+              )}
+            </span>
           );
+          const label = <span className={cn("text-xs font-semibold", active ? "text-ink" : "text-muted")}>{s.label}</span>;
           return (
-            <li key={s.href}>
-              {on ? (
-                <Link
-                  href={s.href}
-                  aria-current={active ? "step" : undefined}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-sm font-semibold transition",
-                    active ? "border-line bg-ink text-bg" : "border-line bg-surface hover:bg-surface-strong",
-                  )}
-                >
-                  {inner}
+            <li key={s.href} className="relative flex flex-col items-center">
+              {on && !active ? (
+                <Link href={s.href} className="group flex flex-col items-center gap-1.5">
+                  {dot}
+                  <span className="text-xs font-semibold text-muted group-hover:text-ink">{s.label}</span>
                 </Link>
               ) : (
                 <span
-                  aria-disabled
-                  className="inline-flex items-center gap-1.5 rounded-full border-2 border-dashed border-line-soft px-3 py-1 text-sm font-semibold text-muted/60"
+                  aria-current={active ? "step" : undefined}
+                  aria-disabled={!on || undefined}
+                  className="flex flex-col items-center gap-1.5"
                 >
-                  {inner}
+                  {dot}
+                  {label}
                 </span>
               )}
             </li>

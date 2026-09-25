@@ -6,6 +6,7 @@ import { friendlyError } from "@/lib/errors";
 import type { Session } from "@/lib/schemas";
 import { useCurrentSession } from "@/lib/store";
 import { PageShell, PageSkeleton, PageTitle } from "./page-shell";
+import { EmptyState } from "./empty";
 import { ErrorPanel } from "./status";
 
 /** Loads the open session from the server; shows loading, empty and error states. */
@@ -21,10 +22,15 @@ export function SessionGate({
   if (load.status === "none")
     return (
       <PageShell>
-        <PageTitle title="No interview open" lede="Set up an interview to get started." />
-        <Link href="/practice" className="font-semibold text-accent underline underline-offset-4">
-          Go to setup
-        </Link>
+        <EmptyState
+          title="No interview open"
+          body="Set up an interview to get started. It takes about a minute."
+          action={
+            <Link href="/practice" className="press neo-sm inline-flex h-11 items-center rounded-xl bg-pop px-4 font-bold text-pop-ink">
+              Go to setup
+            </Link>
+          }
+        />
       </PageShell>
     );
   if (load.status === "error")

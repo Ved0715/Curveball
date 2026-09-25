@@ -133,12 +133,12 @@ export function TrendChart({ points }: { points: { score: number; label: string 
       >
         <defs>
           <linearGradient id="trend-fill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--pop)" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="var(--pop)" stopOpacity="0" />
           </linearGradient>
         </defs>
         {[25, 50, 75].map((g) => (
-          <line key={g} x1={pad.x} x2={w - pad.x} y1={yAt(g)} y2={yAt(g)} stroke="var(--line)" strokeDasharray="3 5" />
+          <line key={g} x1={pad.x} x2={w - pad.x} y1={yAt(g)} y2={yAt(g)} stroke="var(--line-soft)" strokeDasharray="3 5" />
         ))}
         {[50, 75].map((g) => (
           <text key={g} x={w - pad.x} y={yAt(g) - 5} textAnchor="end" className="fill-muted font-mono text-[10px]">
@@ -150,7 +150,7 @@ export function TrendChart({ points }: { points: { score: number; label: string 
           <motion.path
             d={line}
             fill="none"
-            stroke="var(--accent)"
+            stroke="var(--line)"
             strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -167,9 +167,9 @@ export function TrendChart({ points }: { points: { score: number; label: string 
             <circle
               cx={xAt(i)}
               cy={yAt(p.score)}
-              r={hover === i ? 6 : 4.5}
-              fill="var(--accent)"
-              stroke="var(--bg)"
+              r={hover === i ? 7 : 5}
+              fill="var(--pop)"
+              stroke="var(--line)"
               strokeWidth={2}
             />
             <rect
@@ -185,7 +185,7 @@ export function TrendChart({ points }: { points: { score: number; label: string 
       </svg>
       {hover !== null && (
         <div
-          className="glass pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-xl px-3 py-2 text-xs"
+          className="sheet pointer-events-none absolute -translate-x-1/2 -translate-y-[120%] rounded-xl px-3 py-2 text-xs"
           style={{ left: `${(xAt(hover) / w) * 100}%`, top: `${(yAt(points[hover].score) / h) * 100}%` }}
         >
           <div className="font-mono font-semibold">{points[hover].score}/100</div>

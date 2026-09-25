@@ -19,12 +19,14 @@ export function Confetti({ fire }: { fire: boolean }) {
     ctx.scale(dpr, dpr);
 
     const css = getComputedStyle(document.documentElement);
-    const colors = ["--accent", "--accent-2", "--accent-3", "--good"].map((v) => css.getPropertyValue(v).trim());
-    const parts = Array.from({ length: 160 }, (_, i) => ({
+    const colors = ["--pop", "--line", "--track-dsa", "--track-system-design", "--track-real-world"].map((v) =>
+      css.getPropertyValue(v).trim(),
+    );
+    const parts = Array.from({ length: 110 }, (_, i) => ({
       x: innerWidth / 2,
       y: innerHeight * 0.35,
-      vx: Math.cos((i / 160) * Math.PI * 2) * (4 + Math.random() * 8),
-      vy: Math.sin((i / 160) * Math.PI * 2) * (4 + Math.random() * 8) - 6,
+      vx: Math.cos((i / 110) * Math.PI * 2) * (4 + Math.random() * 8),
+      vy: Math.sin((i / 110) * Math.PI * 2) * (4 + Math.random() * 8) - 6,
       r: 3 + Math.random() * 4,
       rot: Math.random() * Math.PI,
       vr: (Math.random() - 0.5) * 0.3,
