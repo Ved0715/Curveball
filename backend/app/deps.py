@@ -1,28 +1,26 @@
-"""Request dependencies: the database session and the current user."""
+"""Request dependencies: the database session and the signed-in user."""
 
-import re
 from typing import Annotated
 
-from fastapi import Depends, Header
+from fastapi import Cookie, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app import repo
+from app import auth, repo
 from app.config import get_settings
 from app.db import get_db
 from app.errors import AppError
 from app.models import User
 
-CLIENT_ID = re.compile(r"^[A-Za-z0-9_-]{16,64}$")
-
 Db = Annotated[AsyncSession, Depends(get_db)]
 
 
-async def current_user(db: Db, x_client_id: Annotated[str | None, Header()] = None) -> User:
-    """Until sign-in exists, a user is an anonymous browser identified by a random id
-    it generates once and sends as `X-Client-Id`. Phase 2 swaps this for real auth."""
-    if not x_client_id or not CLIENT_ID.match(x_client_id):
-        raise AppError(401, "no_client")
-    return await repo.get_or_create_user(db, x_client_id)
+async def current_user(db: Db, cb_session: Annotated[str | None, Cookie()] = None) -> User:
+    if not cb_session:
+        raise AppError(401, "no_session")
+    user = await auth.user_for_token(db, cb_session)
+    if user is None:
+        raise AppError(401, "no_session")
+    return user
 
 
 CurrentUser = Annotated[User, Depends(current_user)]

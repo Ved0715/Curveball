@@ -4,6 +4,7 @@ Events: progress {chars} · say {text} · delta {text} · reset {} · result {..
 """
 
 import logging
+import uuid
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 
@@ -86,6 +87,18 @@ async def structured[M: BaseModel](
                 continue
             raise
     raise AIError("invalid_output")
+
+
+async def save_usage(user_id: uuid.UUID, tally: Tally) -> None:
+    """Record a request's AI usage (all attempts) against the user's daily total."""
+    if not tally.calls:
+        return
+    from app import repo
+    from app.db import get_sessionmaker
+
+    async with get_sessionmaker()() as db:
+        await repo.record_usage(db, user_id, tally.tokens_in, tally.tokens_out, tally.calls)
+        await db.commit()
 
 
 def progress(buffer: str) -> str:

@@ -1,0 +1,565 @@
+{
+  "about": "Curriculum seed imported from the Learning Log artifact. Explore pointers are search prompts or named resources, never URLs.",
+  "topics": [
+    {
+      "id": "dsa-01",
+      "category": "dsa",
+      "title": "Arrays & the two-pointer pattern",
+      "blurb": "Learn to solve array problems in one pass by walking two indices toward or away from each other instead of nesting loops.",
+      "explore": [
+        "Practice: \"Two Sum II\", \"Container With Most Water\"",
+        "Read about the two-pointer technique on a DSA reference site"
+      ]
+    },
+    {
+      "id": "dsa-02",
+      "category": "dsa",
+      "title": "Sliding window",
+      "blurb": "A window that grows and shrinks over a sequence turns many O(n²) substring/subarray problems into O(n).",
+      "explore": [
+        "Practice: \"Longest Substring Without Repeating Characters\"",
+        "Practice: \"Minimum Window Substring\""
+      ]
+    },
+    {
+      "id": "dsa-03",
+      "category": "dsa",
+      "title": "Hash maps for O(1) lookups",
+      "blurb": "Trade memory for speed: recognize when a problem is really asking \"have I seen this before?\"",
+      "explore": [
+        "Practice: \"Group Anagrams\", \"Subarray Sum Equals K\"",
+        "Review hash collision handling (chaining vs. open addressing)"
+      ]
+    },
+    {
+      "id": "dsa-04",
+      "category": "dsa",
+      "title": "Recursion & backtracking",
+      "blurb": "Build the mental model for exploring all choices and undoing them — the base for permutations, subsets, and puzzle solvers.",
+      "explore": [
+        "Practice: \"Subsets\", \"N-Queens\", \"Word Search\"",
+        "Draw the recursion tree for one problem by hand before coding it"
+      ]
+    },
+    {
+      "id": "dsa-05",
+      "category": "dsa",
+      "title": "Binary search beyond sorted arrays",
+      "blurb": "Binary search also works on answer spaces — searching for the smallest value that satisfies a condition.",
+      "explore": [
+        "Practice: \"Koko Eating Bananas\", \"Capacity To Ship Packages\"",
+        "Write the invariant (lo/hi meaning) before coding the loop"
+      ]
+    },
+    {
+      "id": "dsa-06",
+      "category": "dsa",
+      "title": "Trees: traversal & recursion",
+      "blurb": "Master pre/in/post-order and level-order traversal, then use them to solve height, diameter, and path-sum problems.",
+      "explore": [
+        "Practice: \"Diameter of Binary Tree\", \"Lowest Common Ancestor\"",
+        "Implement traversal both recursively and iteratively with a stack"
+      ]
+    },
+    {
+      "id": "dsa-07",
+      "category": "dsa",
+      "title": "Graphs: BFS & DFS",
+      "blurb": "Most graph problems reduce to a careful BFS or DFS — know when to use which and how to track visited state.",
+      "explore": [
+        "Practice: \"Number of Islands\", \"Course Schedule\"",
+        "Review adjacency list vs. matrix trade-offs"
+      ]
+    },
+    {
+      "id": "dsa-08",
+      "category": "dsa",
+      "title": "Dynamic programming: 1D",
+      "blurb": "Spot overlapping subproblems and optimal substructure; start with 1D DP (climbing stairs, house robber) before 2D.",
+      "explore": [
+        "Practice: \"Climbing Stairs\", \"House Robber\", \"Coin Change\"",
+        "Write the recurrence relation in plain English first"
+      ]
+    },
+    {
+      "id": "dsa-09",
+      "category": "dsa",
+      "title": "Dynamic programming: 2D & grids",
+      "blurb": "Extend DP to grids and strings — edit distance, longest common subsequence, unique paths.",
+      "explore": [
+        "Practice: \"Edit Distance\", \"Longest Common Subsequence\"",
+        "Draw the DP table by hand for a small example"
+      ]
+    },
+    {
+      "id": "dsa-10",
+      "category": "dsa",
+      "title": "Heaps & priority queues",
+      "blurb": "Learn when \"give me the k smallest/largest\" or \"process by priority\" signals a heap.",
+      "explore": [
+        "Practice: \"Kth Largest Element\", \"Merge k Sorted Lists\"",
+        "Implement a min-heap from scratch once, by hand"
+      ]
+    },
+    {
+      "id": "dsa-11",
+      "category": "dsa",
+      "title": "Big-O in practice",
+      "blurb": "Get fast at reading your own code's time and space complexity before you submit — interviewers watch for this.",
+      "explore": [
+        "Rewrite 3 old solutions and label their Big-O",
+        "Compare an O(n log n) vs O(n) approach for one problem"
+      ]
+    },
+    {
+      "id": "dsa-12",
+      "category": "dsa",
+      "title": "Union-Find (Disjoint Set)",
+      "blurb": "The go-to structure for \"are these connected\" and \"group these into clusters\" problems, with near-O(1) operations.",
+      "explore": [
+        "Practice: \"Number of Provinces\", \"Redundant Connection\"",
+        "Implement union by rank + path compression"
+      ]
+    },
+    {
+      "id": "sysdesign-01",
+      "category": "system-design",
+      "title": "What happens when you type a URL",
+      "blurb": "Walk the full path: DNS, TCP/TLS handshake, HTTP request, server processing, render — the classic warm-up question.",
+      "explore": [
+        "Sketch the flow on paper, then check it against a reference diagram",
+        "Time yourself explaining it out loud in 3 minutes"
+      ]
+    },
+    {
+      "id": "sysdesign-02",
+      "category": "system-design",
+      "title": "Load balancing basics",
+      "blurb": "Understand round robin, least connections, and consistent hashing — and why sticky sessions complicate things.",
+      "explore": [
+        "Read how a reverse proxy like Nginx balances load",
+        "Sketch a 2-server setup with a load balancer in front"
+      ]
+    },
+    {
+      "id": "sysdesign-03",
+      "category": "system-design",
+      "title": "Caching strategies",
+      "blurb": "Cache-aside, write-through, write-back — and the eviction policies (LRU, LFU) that decide what to keep.",
+      "explore": [
+        "Implement an LRU cache from scratch (also a common DSA question)",
+        "Read about cache stampede and how TTL jitter helps"
+      ]
+    },
+    {
+      "id": "sysdesign-04",
+      "category": "system-design",
+      "title": "Database indexing",
+      "blurb": "Learn how a B-tree index speeds up reads, why writes get slower, and when a full table scan is actually fine.",
+      "explore": [
+        "Run EXPLAIN on a query in a database you use",
+        "Read about composite indexes and column order"
+      ]
+    },
+    {
+      "id": "sysdesign-05",
+      "category": "system-design",
+      "title": "SQL vs NoSQL trade-offs",
+      "blurb": "Know when normalized relational data wins and when a document or key-value store fits better — concretely, not dogmatically.",
+      "explore": [
+        "Pick one project idea and design its schema both ways",
+        "Read about eventual vs strong consistency"
+      ]
+    },
+    {
+      "id": "sysdesign-06",
+      "category": "system-design",
+      "title": "API design: REST fundamentals",
+      "blurb": "Resource naming, status codes, idempotency, pagination — the details that separate clean APIs from messy ones.",
+      "explore": [
+        "Review status codes 200 vs 201 vs 204 vs 409",
+        "Design pagination for a list endpoint you use often"
+      ]
+    },
+    {
+      "id": "sysdesign-07",
+      "category": "system-design",
+      "title": "Message queues & async processing",
+      "blurb": "Understand why you'd put a queue between two services, and the at-least-once vs exactly-once delivery trade-off.",
+      "explore": [
+        "Read the basic architecture of a queue like RabbitMQ or SQS",
+        "Sketch a system where a queue decouples a slow email job"
+      ]
+    },
+    {
+      "id": "sysdesign-08",
+      "category": "system-design",
+      "title": "Horizontal vs vertical scaling",
+      "blurb": "Know the limits of \"just get a bigger server\" and what statelessness buys you when you scale out.",
+      "explore": [
+        "List what must be true for a service to scale horizontally",
+        "Read about sharding a database by key"
+      ]
+    },
+    {
+      "id": "sysdesign-09",
+      "category": "system-design",
+      "title": "Rate limiting",
+      "blurb": "Token bucket vs sliding window vs fixed window — how APIs protect themselves from abuse and overload.",
+      "explore": [
+        "Implement a token bucket rate limiter from scratch",
+        "Read how a CDN or API gateway applies rate limits"
+      ]
+    },
+    {
+      "id": "sysdesign-10",
+      "category": "system-design",
+      "title": "Design a URL shortener",
+      "blurb": "A classic first system design problem — combines hashing, database schema, and read-heavy scaling in one exercise.",
+      "explore": [
+        "Design it end to end on paper: API, schema, ID generation",
+        "Compare base62 encoding vs random ID generation"
+      ]
+    },
+    {
+      "id": "sysdesign-11",
+      "category": "system-design",
+      "title": "CAP theorem, in practice",
+      "blurb": "Consistency, availability, partition tolerance — understand it through real examples instead of memorizing the triangle.",
+      "explore": [
+        "Match 3 databases you know to where they sit on CAP",
+        "Read a concrete example of a network partition trade-off"
+      ]
+    },
+    {
+      "id": "sysdesign-12",
+      "category": "system-design",
+      "title": "Observability: logs, metrics, traces",
+      "blurb": "You can't fix what you can't see — learn the three pillars and when to reach for each one.",
+      "explore": [
+        "Add structured logging to one small project",
+        "Read about the difference between a metric and a trace"
+      ]
+    },
+    {
+      "id": "lang-01",
+      "category": "lang-depth",
+      "title": "How the event loop actually works",
+      "blurb": "Microtasks vs macrotasks, call stack, callback queue — the mental model behind every async bug you'll debug.",
+      "explore": [
+        "Predict the output of a script mixing setTimeout and Promises, then run it",
+        "Read about the difference between microtask and macrotask queues"
+      ]
+    },
+    {
+      "id": "lang-02",
+      "category": "lang-depth",
+      "title": "Closures, from first principles",
+      "blurb": "Understand exactly what a closure captures and why — this explains half the \"weird\" bugs in loops and callbacks.",
+      "explore": [
+        "Write a counter factory function from scratch, no libraries",
+        "Explain why `var` in a loop behaves differently from `let`"
+      ]
+    },
+    {
+      "id": "lang-03",
+      "category": "lang-depth",
+      "title": "Memory: stack vs heap",
+      "blurb": "Know what lives where, what gets garbage collected, and why passing objects behaves differently from passing primitives.",
+      "explore": [
+        "Trace through a function call by hand, noting stack frames",
+        "Read how your language's garbage collector decides what to free"
+      ]
+    },
+    {
+      "id": "lang-04",
+      "category": "lang-depth",
+      "title": "Concurrency primitives",
+      "blurb": "Threads, locks, mutexes, and race conditions — the vocabulary you need before touching concurrent code at work.",
+      "explore": [
+        "Write a small program with a deliberate race condition, then fix it",
+        "Read about deadlock and the four conditions that cause it"
+      ]
+    },
+    {
+      "id": "lang-05",
+      "category": "lang-depth",
+      "title": "Type systems: static vs dynamic",
+      "blurb": "Understand what a type checker actually buys you, and where dynamic typing genuinely moves faster.",
+      "explore": [
+        "Add types to one untyped function and see what bugs surface",
+        "Read about structural vs nominal typing"
+      ]
+    },
+    {
+      "id": "lang-06",
+      "category": "lang-depth",
+      "title": "Error handling patterns",
+      "blurb": "Exceptions vs. return-value errors vs. Result/Option types — and why \"just catch everything\" is a trap.",
+      "explore": [
+        "Refactor one function to handle errors explicitly instead of catching broadly",
+        "Read how a language you don't use handles errors (contrast is clarifying)"
+      ]
+    },
+    {
+      "id": "lang-07",
+      "category": "lang-depth",
+      "title": "How a compiler or interpreter runs your code",
+      "blurb": "Lexing, parsing, and execution — a rough mental model of the pipeline between your source file and a running program.",
+      "explore": [
+        "Read a short intro to how your main language is parsed and executed",
+        "Try writing a tiny expression evaluator (tokenize → parse → evaluate)"
+      ]
+    },
+    {
+      "id": "lang-08",
+      "category": "lang-depth",
+      "title": "Dependency injection & testable code",
+      "blurb": "Learn why passing dependencies in (instead of hardcoding them) makes code testable and swappable.",
+      "explore": [
+        "Refactor one function to accept its dependency as a parameter",
+        "Write a unit test that swaps in a fake dependency"
+      ]
+    },
+    {
+      "id": "lang-09",
+      "category": "lang-depth",
+      "title": "Immutability and why it matters",
+      "blurb": "Understand how immutable data avoids a whole class of bugs in shared state and concurrent code.",
+      "explore": [
+        "Rewrite a mutating function to return a new value instead",
+        "Read how your framework of choice encourages (or fights) immutability"
+      ]
+    },
+    {
+      "id": "lang-10",
+      "category": "lang-depth",
+      "title": "Reading a stack trace properly",
+      "blurb": "A skill nobody teaches directly — learn to read a trace top to bottom and separate your code from library noise.",
+      "explore": [
+        "Take a real stack trace from a past bug and annotate each frame",
+        "Practice reproducing an error deliberately, just to read its trace"
+      ]
+    },
+    {
+      "id": "fund-01",
+      "category": "fundamentals",
+      "title": "Git internals: commits, branches, and HEAD",
+      "blurb": "Understand what a commit actually is (a snapshot + parent pointer) so branching and rebasing stop feeling magical.",
+      "explore": [
+        "Run `git log --graph` on a real repo and trace the history by hand",
+        "Practice an interactive rebase on a throwaway branch"
+      ]
+    },
+    {
+      "id": "fund-02",
+      "category": "fundamentals",
+      "title": "HTTP, headers, and status codes",
+      "blurb": "Go past \"200 means OK\" — understand headers, caching directives, and the request/response lifecycle.",
+      "explore": [
+        "Inspect the network tab on a site you use and read every header",
+        "Read the difference between 401 and 403"
+      ]
+    },
+    {
+      "id": "fund-03",
+      "category": "fundamentals",
+      "title": "TCP vs UDP",
+      "blurb": "Reliable, ordered delivery vs fast, connectionless — know which trade-off fits which kind of application.",
+      "explore": [
+        "List 3 apps that use TCP and 3 that use UDP, and explain why",
+        "Read about the TCP three-way handshake"
+      ]
+    },
+    {
+      "id": "fund-04",
+      "category": "fundamentals",
+      "title": "Processes vs threads",
+      "blurb": "Understand isolation, shared memory, and context-switch cost — the basis for every concurrency decision above this.",
+      "explore": [
+        "Read how your OS scheduler switches between processes",
+        "Compare memory isolation: process vs thread"
+      ]
+    },
+    {
+      "id": "fund-05",
+      "category": "fundamentals",
+      "title": "How databases guarantee transactions (ACID)",
+      "blurb": "Atomicity, consistency, isolation, durability — what actually breaks when one of these is relaxed.",
+      "explore": [
+        "Read about isolation levels (read committed vs serializable)",
+        "Find a real example of a lost-update bug and how ACID prevents it"
+      ]
+    },
+    {
+      "id": "fund-06",
+      "category": "fundamentals",
+      "title": "Big-endian, hex, and how data is actually stored",
+      "blurb": "A low-level topic worth an hour — demystifies debugging binary data and reading memory dumps.",
+      "explore": [
+        "Convert a few numbers between decimal, hex, and binary by hand",
+        "Read about endianness and why it matters across systems"
+      ]
+    },
+    {
+      "id": "fund-07",
+      "category": "fundamentals",
+      "title": "DNS, step by step",
+      "blurb": "Recursive resolvers, root servers, TLDs, and caching — what actually happens before a single byte of your request is sent.",
+      "explore": [
+        "Run `dig` or `nslookup` on a domain and read the full chain",
+        "Read about DNS TTL and why changes take time to propagate"
+      ]
+    },
+    {
+      "id": "fund-08",
+      "category": "fundamentals",
+      "title": "Writing a good README and commit message",
+      "blurb": "An underrated skill — clear commits and docs are what make you easy to work with on a team.",
+      "explore": [
+        "Rewrite your last 5 commit messages to follow a clear convention",
+        "Read a well-written README from a popular open-source project"
+      ]
+    },
+    {
+      "id": "fund-09",
+      "category": "fundamentals",
+      "title": "Testing pyramid: unit, integration, e2e",
+      "blurb": "Understand why you want many fast unit tests and few slow end-to-end tests, not the reverse.",
+      "explore": [
+        "Write one unit test and one integration test for the same feature",
+        "Read about the cost/confidence trade-off at each testing layer"
+      ]
+    },
+    {
+      "id": "fund-10",
+      "category": "fundamentals",
+      "title": "Reading someone else's codebase",
+      "blurb": "A concrete skill: start from the entry point, follow one request end to end, and resist reading everything at once.",
+      "explore": [
+        "Pick an open-source repo and trace one feature from entry to output",
+        "Time-box it to 45 minutes and write down what you learned"
+      ]
+    },
+    {
+      "id": "real-01",
+      "category": "real-world",
+      "title": "Read one real production postmortem",
+      "blurb": "Public postmortems are some of the best engineering writing there is — see how a real team diagnosed and fixed a real outage, under pressure, with incomplete information.",
+      "explore": [
+        "Search an engineering blog's postmortem or incident report (Cloudflare, GitHub, Slack, and Vercel all publish theirs)",
+        "Write 3 sentences: what broke, what caught it, what they changed after"
+      ]
+    },
+    {
+      "id": "real-02",
+      "category": "real-world",
+      "title": "Spend 20 minutes on what's trending in software",
+      "blurb": "Staying current isn't a side effect of working — it's a habit. Twenty focused minutes a day compounds fast.",
+      "explore": [
+        "Browse Hacker News or GitHub Trending for 20 minutes, no goal beyond noticing",
+        "Pick one tool or story and write 2 sentences on why it matters"
+      ]
+    },
+    {
+      "id": "real-03",
+      "category": "real-world",
+      "title": "Situational: a production error spike",
+      "blurb": "A scenario, not a lecture. Your API's error rate just tripled in production, right now. Think through your first five actions before you touch any code.",
+      "explore": [
+        "Write your triage checklist: what do you check first, second, third?",
+        "Compare it against a real incident-response runbook afterward"
+      ]
+    },
+    {
+      "id": "real-04",
+      "category": "real-world",
+      "title": "Read a real system-design write-up",
+      "blurb": "Company engineering blogs regularly publish exactly how they built something at scale — a free architecture review from people who've actually done it.",
+      "explore": [
+        "Search \"[company] engineering blog architecture\" for Netflix, Uber, Airbnb, Shopify, or Discord",
+        "Note one design decision you wouldn't have made yourself, and why they did"
+      ]
+    },
+    {
+      "id": "real-05",
+      "category": "real-world",
+      "title": "Situational: a teammate's PR broke the build",
+      "blurb": "A scenario for judgment, not syntax. A coworker's merged PR just broke the build on main, and they're offline for the day. Walk through exactly what you'd do, in order.",
+      "explore": [
+        "Write out your exact next 3 actions, in order",
+        "Think through how you'd flag it to the team without it sounding like blame"
+      ]
+    },
+    {
+      "id": "real-06",
+      "category": "real-world",
+      "title": "Read about a real security incident",
+      "blurb": "Understanding how real breaches actually happened builds the instinct to spot risky code before it ships — most root causes are surprisingly ordinary.",
+      "explore": [
+        "Search for a post-incident security report or an OWASP case study",
+        "Write the root cause in one plain sentence"
+      ]
+    },
+    {
+      "id": "real-07",
+      "category": "real-world",
+      "title": "Situational: your estimate was wrong",
+      "blurb": "A scenario in planning judgment. A feature you estimated at 2 days is now on day 5, and the deadline is tomorrow. Think through what you'd do, and what you'd actually say in standup.",
+      "explore": [
+        "Write the exact words you'd use to flag it early, next time",
+        "Read how experienced engineers pad and communicate estimates"
+      ]
+    },
+    {
+      "id": "real-08",
+      "category": "real-world",
+      "title": "Follow one experienced engineer's writing",
+      "blurb": "A single well-chosen blog beats a hundred random tutorials — find a writer whose judgment you trust and read through their backlog.",
+      "explore": [
+        "Search for a senior engineer's personal blog (Julia Evans and Martin Fowler are two well-known starting points)",
+        "Read one full post and note one idea you'd never considered before"
+      ]
+    },
+    {
+      "id": "real-09",
+      "category": "real-world",
+      "title": "Situational: reviewing risky code",
+      "blurb": "A scenario in code review. A PR touches your service's payment logic, and the tests look thin. Decide exactly what you'd ask for before approving it.",
+      "explore": [
+        "List 3 specific questions or changes you'd request on the PR",
+        "Search for a public code-review style guide and compare it to your list"
+      ]
+    },
+    {
+      "id": "real-10",
+      "category": "real-world",
+      "title": "Read a \"why we rewrote it\" story",
+      "blurb": "Rewrite postmortems are unusually honest about what went wrong the first time — a fast way to learn hard lessons secondhand instead of the hard way.",
+      "explore": [
+        "Search \"why we rewrote\" or \"we migrated from\" plus an engineering blog",
+        "Note what actually forced the decision, not just what changed"
+      ]
+    },
+    {
+      "id": "real-11",
+      "category": "real-world",
+      "title": "Situational: an ambiguous ticket",
+      "blurb": "A scenario in requirements. You're handed a ticket that just says \"make search better,\" with no other detail. Think through every question you'd ask before writing a line of code.",
+      "explore": [
+        "Write 5 clarifying questions you'd actually ask",
+        "Think through how a senior engineer might scope the same vague ticket"
+      ]
+    },
+    {
+      "id": "real-12",
+      "category": "real-world",
+      "title": "Learn one new tool, shallowly on purpose",
+      "blurb": "You don't need to master everything in your field — you need to know what exists and roughly when you'd reach for it.",
+      "explore": [
+        "Pick one unfamiliar tool and read its own \"why we built this\" page",
+        "Write one sentence: what problem does it solve, and would you reach for it?"
+      ]
+    }
+  ]
+}

@@ -26,20 +26,12 @@ from app.prompts.interviewer import InterviewerReply, interviewer_system, interv
 from app.prompts.report import Report, report_prompt
 from app.schemas import ReportRequest, SessionOut, Setup, TurnIn, TurnRequest
 from app.sse import event, partial_json_string
-from app.streaming import Tally, progress, sse_response, structured
+from app.streaming import Tally, progress, save_usage, sse_response, structured
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
-SYSTEM_COACH = "You are Mock Room, an expert interview coach. Follow the output format exactly."
+SYSTEM_COACH = "You are Curveball, an expert interview coach. Follow the output format exactly."
 EARLY_END = "Let's stop here. Thanks for your time."
-
-
-async def _save_usage(user_id: uuid.UUID, tally: Tally) -> None:
-    if not tally.calls:
-        return
-    async with get_sessionmaker()() as db:
-        await repo.record_usage(db, user_id, tally.tokens_in, tally.tokens_out, tally.calls)
-        await db.commit()
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -97,7 +89,7 @@ async def brief(session_id: uuid.UUID, db: Db, user: CurrentUser) -> Any:
                 else:
                     yield item
         finally:
-            await _save_usage(user_id, tally)
+            await save_usage(user_id, tally)
 
     return sse_response(gen())
 
@@ -174,7 +166,7 @@ async def turn(session_id: uuid.UUID, body: TurnIn, db: Db, user: AIUser) -> Any
                     "result", {"kind": applied.kind, "say": applied.say, "state": applied.state.model_dump()}
                 )
         finally:
-            await _save_usage(user_id, tally)
+            await save_usage(user_id, tally)
 
     return sse_response(gen())
 
@@ -205,7 +197,7 @@ async def hint(session_id: uuid.UUID, db: Db, user: AIUser) -> Any:
                     tally.add(ev)
                     yield event("result", {"text": ev.text.strip()})
         finally:
-            await _save_usage(user_id, tally)
+            await save_usage(user_id, tally)
 
     return sse_response(gen())
 
@@ -264,7 +256,7 @@ async def report(session_id: uuid.UUID, db: Db, user: CurrentUser) -> Any:
                 else:
                     yield item
         finally:
-            await _save_usage(user_id, tally)
+            await save_usage(user_id, tally)
 
     return sse_response(gen())
 

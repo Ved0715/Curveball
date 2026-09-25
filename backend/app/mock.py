@@ -157,3 +157,36 @@ def mock_report(transcript: list[Turn]) -> AsyncIterator[StreamEvent]:
         }
     )
     return _drip(report.model_dump_json(by_alias=True), chunk=80, delay=0.01)
+
+
+def mock_lesson(title: str) -> AsyncIterator[StreamEvent]:
+    from app.prompts.lesson import Lesson
+
+    lesson = Lesson.model_validate(
+        {
+            "tldr": f"{title}: the one idea to remember (mock lesson).",
+            "explanation": [
+                "This is a mock lesson. Set AI_MOCK=false and add an API key for a real one.",
+                "Real lessons build intuition first, then precision, with one concrete example.",
+            ],
+            "key_points": [
+                "Start from the problem it solves",
+                "Know the trade-off",
+                "Recognise it in the wild",
+            ],
+            "example": {"title": "A small worked example", "body": "Walk through the idea on a tiny input."},
+            "pitfalls": ["Memorising the definition without the why", "Ignoring the trade-offs"],
+            "check": [
+                {"question": "What problem does this solve?", "answer": "The problem named in the topic."},
+                {
+                    "question": "When would you not use it?",
+                    "answer": "When its trade-off costs more than it saves.",
+                },
+                {
+                    "question": "How would you explain it to a teammate?",
+                    "answer": "In one sentence plus an example.",
+                },
+            ],
+        }
+    )
+    return _drip(lesson.model_dump_json(), chunk=80, delay=0.01)

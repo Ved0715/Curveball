@@ -25,8 +25,14 @@ class Settings(BaseSettings):
     # whole app with no API key, and keeps end-to-end tests free and deterministic.
     ai_mock: bool = False
 
-    # Comma-separated list of frontend origins allowed to call this API.
+    # Comma-separated frontend origins. Also the allow-list for the Origin check on
+    # state-changing requests (CSRF defence alongside SameSite cookies).
     cors_origins: str = "http://localhost:3000"
+
+    # Session cookie: set COOKIE_SECURE=true in production (HTTPS only).
+    cookie_secure: bool = False
+    # Shared secret for scheduled jobs calling /internal/*. Unset = internal routes disabled.
+    internal_token: str | None = None
 
     # Postgres connection string (Neon). Schema is managed by Alembic migrations.
     database_url: str | None = None
@@ -54,6 +60,7 @@ class Settings(BaseSettings):
     # Output caps per call, to bound cost and latency.
     max_tokens_resume: int = 4000
     max_tokens_brief: int = 8000
+    max_tokens_lesson: int = 6000
     max_tokens_turn: int = 1024  # includes any thinking tokens
     max_tokens_hint: int = 400
     max_tokens_report: int = 16000

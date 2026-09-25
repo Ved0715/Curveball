@@ -29,3 +29,6 @@ playwright-report/
 
 # Eval run outputs (regenerable)
 .claude/hillclimb/
+
+# Personal data exports (never commit)
+backend/.imports/

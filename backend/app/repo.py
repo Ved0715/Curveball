@@ -19,16 +19,6 @@ from app.schemas import Turn as TurnSchema
 INTERVIEWERS = ["Priya", "Daniel", "Meera", "Arjun", "Sofia", "Rahul", "Hannah", "Kabir"]
 
 
-async def get_or_create_user(db: AsyncSession, client_id: str) -> User:
-    user = await db.scalar(select(User).where(User.client_id == client_id))
-    if user:
-        return user
-    user = User(client_id=client_id)
-    db.add(user)
-    await db.commit()
-    return user
-
-
 async def create_session(db: AsyncSession, user: User, setup: Setup) -> InterviewSession:
     s = InterviewSession(
         user_id=user.id,

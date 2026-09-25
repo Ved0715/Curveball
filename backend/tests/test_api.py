@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from app import llm
 from app.config import get_settings
 from app.main import app
-from tests.conftest import CLIENT_B
+from tests.conftest import signup
 from tests.helpers import SETUP, create, events, fake_stream, play_interview, result
 
 
@@ -14,11 +14,11 @@ def test_health_reports_db(client: TestClient) -> None:
     assert r.headers["X-Request-Id"]
 
 
-def test_requires_client_id() -> None:
+def test_requires_login() -> None:
     with TestClient(app) as c:
         r = c.post("/api/sessions", json=SETUP)
     assert r.status_code == 401
-    assert r.json() == {"detail": {"code": "no_client"}}
+    assert r.json() == {"detail": {"code": "no_session"}}
 
 
 def test_setup_is_validated(client: TestClient) -> None:
@@ -169,13 +169,12 @@ def test_hint(client: TestClient) -> None:
     assert result(client.post(f"/api/sessions/{sid}/hint").text)["text"]
 
 
-def test_sessions_are_private(client: TestClient) -> None:
+def test_sessions_are_private(client: TestClient, other: TestClient) -> None:
     sid = create(client)
-    other = {"X-Client-Id": CLIENT_B}
-    assert client.get(f"/api/sessions/{sid}", headers=other).status_code == 404
-    assert client.post(f"/api/sessions/{sid}/turn", json={}, headers=other).status_code == 404
-    client.delete(f"/api/sessions/{sid}", headers=other)
-    assert client.get("/api/history", headers=other).json() == []
+    assert other.get(f"/api/sessions/{sid}").status_code == 404
+    assert other.post(f"/api/sessions/{sid}/turn", json={}).status_code == 404
+    other.delete(f"/api/sessions/{sid}")
+    assert other.get("/api/history").json() == []
     assert client.get(f"/api/sessions/{sid}").status_code == 200
 
 
@@ -187,6 +186,9 @@ def test_delete_session_and_delete_my_data(client: TestClient) -> None:
     result(client.post(f"/api/sessions/{keep}/report").text)
 
     assert client.delete("/api/me").status_code == 204
+    # The account is gone: its session no longer works, and its data is deleted.
+    assert client.get(f"/api/sessions/{keep}").status_code == 401
+    signup(client)
     assert client.get(f"/api/sessions/{keep}").status_code == 404
     assert client.get("/api/history").json() == []
 

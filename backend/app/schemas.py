@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 Level = Literal[
     "Intern / fresher",
@@ -97,3 +97,44 @@ class HistoryItem(BaseModel):
     date: str
     overall: int
     verdict: str
+
+
+# ---------- Accounts ----------
+
+
+def _trim(v: object) -> object:
+    return v.strip() if isinstance(v, str) else v
+
+
+class SignupIn(BaseModel):
+    email: str = Field(min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+    _trim_email = field_validator("email", mode="before")(_trim)
+    password: str = Field(min_length=8, max_length=128)
+    name: str = Field(min_length=1, max_length=80)
+    timezone: str = Field(default="Asia/Kolkata", max_length=64)
+
+
+class LoginIn(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+
+    _trim_email = field_validator("email", mode="before")(_trim)
+    password: str = Field(min_length=1, max_length=128)
+
+
+class UserOut(BaseModel):
+    id: str
+    email: str
+    name: str
+    timezone: str
+    created_at: str
+
+
+class ProfileUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    timezone: str | None = Field(default=None, max_length=64)
+
+
+class PasswordChange(BaseModel):
+    current: str = Field(min_length=1, max_length=128)
+    new: str = Field(min_length=8, max_length=128)

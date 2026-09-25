@@ -5,12 +5,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from app import learning
 from app.config import get_settings
-from app.db import get_engine
+from app.db import get_engine, get_sessionmaker
 from app.errors import install_error_handlers
 from app.models import Base
-from app.routers import health, history, me, resume, sessions
+from app.routers import auth, health, history, internal, learn, me, progress, resume, sessions
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -21,20 +23,37 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         # Throwaway SQLite only (tests / e2e). Real databases use `alembic upgrade head`.
         async with get_engine().begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+    if get_settings().database_url:
+        async with get_sessionmaker()() as db:
+            changed = await learning.sync_curriculum(db)
+            if changed:
+                logging.getLogger("mockroom").info("curriculum: %d topic(s) added or updated", changed)
     yield
     await get_engine().dispose()
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="Mock Room API", version="0.2.0", lifespan=lifespan)
+    app = FastAPI(title="Curveball API", version="0.3.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
-        allow_methods=["GET", "POST", "DELETE"],
-        allow_headers=["Content-Type", "Authorization", "X-Client-Id"],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+        allow_headers=["Content-Type"],
         expose_headers=["X-Request-Id"],
     )
+
+    @app.middleware("http")
+    async def origin_check(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        """CSRF defence in depth (alongside SameSite=Lax): a browser request that changes state
+        must come from one of our own origins. Requests without an Origin header (servers,
+        CLI tools) aren't browser-driven and pass."""
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            origin = request.headers.get("origin")
+            if origin and origin not in settings.cors_origin_list:
+                return JSONResponse({"detail": {"code": "bad_origin"}}, status_code=403)
+        return await call_next(request)
 
     @app.middleware("http")
     async def request_id(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
@@ -44,7 +63,17 @@ def create_app() -> FastAPI:
         return response
 
     install_error_handlers(app)
-    for r in (health.router, sessions.router, history.router, me.router, resume.router):
+    for r in (
+        health.router,
+        auth.router,
+        me.router,
+        learn.router,
+        progress.router,
+        sessions.router,
+        history.router,
+        resume.router,
+        internal.router,
+    ):
         app.include_router(r)
     return app
 
