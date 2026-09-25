@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app import auth
@@ -117,3 +118,17 @@ def test_delete_account_signs_out(client: TestClient) -> None:
     assert client.get("/api/auth/me").status_code == 401
     r = client.post("/api/auth/login", json={"email": "asha@example.com", "password": "correct horse"})
     assert r.status_code == 401
+
+
+def test_concurrent_duplicate_signup_is_a_clean_409(monkeypatch: pytest.MonkeyPatch) -> None:
+    """If two signups race past the 'email taken?' check, the database constraint still wins
+    and the loser gets a 409, not a crash."""
+    with TestClient(app) as c:
+        signup(c, email="race@example.com")
+
+        async def not_found(*_a: object, **_k: object) -> None:
+            return None
+
+        monkeypatch.setattr(auth, "find_user", not_found)
+        r = c.post("/api/auth/signup", json={"email": "race@example.com", "password": "x" * 8, "name": "B"})
+        assert r.status_code == 409 and r.json()["detail"]["code"] == "email_taken"

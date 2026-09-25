@@ -3,6 +3,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Request, Response, status
+from sqlalchemy.exc import IntegrityError
 
 from app import auth
 from app.deps import CurrentUser, Db
@@ -31,7 +32,11 @@ async def signup(body: SignupIn, request: Request, response: Response, db: Db) -
         raise AppError(429, "too_many_attempts")
     if await auth.find_user(db, body.email):
         raise AppError(409, "email_taken")
-    user = await auth.create_user(db, body.email, body.password, body.name, body.timezone)
+    try:
+        user = await auth.create_user(db, body.email, body.password, body.name, body.timezone)
+    except IntegrityError as e:  # two signups for the same email raced past the check above
+        await db.rollback()
+        raise AppError(409, "email_taken") from e
     await auth.start_session(db, user, request.headers.get("user-agent", ""), response)
     return user_out(user)
 

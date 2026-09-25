@@ -31,6 +31,9 @@ class Settings(BaseSettings):
 
     # Session cookie: set COOKIE_SECURE=true in production (HTTPS only).
     cookie_secure: bool = False
+    # Abuse limits per client IP. Generous on purpose: a campus or office may share one IP.
+    signup_limit_per_hour: int = 20
+    login_limit_per_15min: int = 10
     # Shared secret for scheduled jobs calling /internal/*. Unset = internal routes disabled.
     internal_token: str | None = None
 

@@ -1,24 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
-import { SiteHeader } from "@/components/header";
 import { Providers } from "@/components/providers";
+import { BRAND, TAGLINE } from "@/lib/brand";
 import { themeScript } from "@/lib/theme-script";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-});
+const bricolage = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin"], weight: ["500", "700", "800"] });
 
 export const metadata: Metadata = {
-  title: { default: "Mock Room: AI interview practice", template: "%s · Mock Room" },
-  description:
-    "Practise the interview before it counts. A prep brief built from your resume, a live AI interviewer that asks real follow-ups, and an honest scored report.",
+  title: { default: `${BRAND}: learn daily, interview ready`, template: `%s · ${BRAND}` },
+  description: `${TAGLINE} A daily learning habit for engineers, plus AI mock interviews that tell you honestly what to fix.`,
 };
 
 export const viewport: Viewport = {
@@ -26,8 +20,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f4ef" },
-    { media: "(prefers-color-scheme: dark)", color: "#07080c" },
+    { media: "(prefers-color-scheme: light)", color: "#fff7ea" },
+    { media: "(prefers-color-scheme: dark)", color: "#121016" },
   ],
 };
 
@@ -35,11 +29,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      data-theme="dark"
+      data-theme="light"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full`}
+      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} h-full`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="min-h-full">
         {/* Sets light/dark before first paint so the page never flashes the wrong theme. */}
         <Script id="theme" strategy="beforeInteractive">
           {themeScript}
@@ -50,12 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <Providers>
-          <SiteHeader />
-          <main id="main" className="flex-1">
-            {children}
-          </main>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

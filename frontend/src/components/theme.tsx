@@ -57,7 +57,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={cycle}
-      className="grid size-10 cursor-pointer place-items-center rounded-xl border border-line bg-surface text-muted transition hover:text-ink"
+      className="press neo-sm grid size-10 cursor-pointer place-items-center rounded-xl bg-surface text-ink"
       aria-label={`Theme: ${pref}. Click to change.`}
       title={`Theme: ${pref}`}
     >

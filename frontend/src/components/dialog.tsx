@@ -46,9 +46,9 @@ export function ConfirmDialog({
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="rounded-3xl border border-line bg-bg-2 p-6 shadow-2xl"
+            className="neo bg-surface rounded-3xl p-6"
           >
-            <h2 className="font-display text-3xl tracking-tight">{title}</h2>
+            <h2 className="font-display text-3xl font-extrabold tracking-tight">{title}</h2>
             <div className="mt-2 text-muted">{body}</div>
             {error && (
               <p role="alert" className="mt-3 text-sm text-bad">

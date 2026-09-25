@@ -9,7 +9,7 @@ import { ReportView } from "@/components/report-view";
 import { SessionGate } from "@/components/session-gate";
 import { ErrorPanel, StreamingPanel } from "@/components/status";
 import { Button } from "@/components/ui";
-import { createSession, streamReport } from "@/lib/api";
+import { addToQueue, createSession, streamReport } from "@/lib/api";
 import { friendlyError } from "@/lib/errors";
 import { streamPercent } from "@/lib/format";
 import type { Session } from "@/lib/schemas";
@@ -63,6 +63,9 @@ function ReportFlow({ session }: { session: Session }) {
           company={session.setup.company}
           round={session.setup.round}
           celebrate={fresh}
+          onQueue={async (title, blurb) => {
+            await addToQueue({ title, blurb, source: "interview", session_id: session.id });
+          }}
           actions={
             <>
               <Button size="lg" onClick={() => void practiseAgain()} loading={again.busy}>

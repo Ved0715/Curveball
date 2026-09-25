@@ -17,12 +17,15 @@ type Store = {
   /** In-memory copy of the open session, refreshed from the server. Not persisted. */
   session: Session | null;
   speakAloud: boolean;
+  /** Current learning streak for the app chrome; refreshed by the shell and the Today page. */
+  streak: number | null;
 
   updateSetup: (patch: Partial<Setup>) => void;
   openSession: (session: Session) => void;
   patchSession: (fn: (s: Session) => Session) => void;
   closeSession: () => void;
   setSpeakAloud: (on: boolean) => void;
+  setStreak: (n: number) => void;
   reset: () => void;
 };
 
@@ -33,17 +36,19 @@ export const useStore = create<Store>()(
       sessionId: null,
       session: null,
       speakAloud: false,
+      streak: null,
 
       updateSetup: (patch) => set((s) => ({ setup: { ...s.setup, ...patch } })),
       openSession: (session) => set({ session, sessionId: session.id }),
       patchSession: (fn) => set((s) => (s.session ? { session: fn(s.session) } : {})),
       closeSession: () => set({ session: null, sessionId: null }),
       setSpeakAloud: (on) => set({ speakAloud: on }),
-      reset: () => set({ setup: DEFAULT_SETUP, sessionId: null, session: null }),
+      setStreak: (n) => set({ streak: n }),
+      reset: () => set({ setup: DEFAULT_SETUP, sessionId: null, session: null, streak: null }),
     }),
     {
-      name: "mockroom.v2",
-      version: 2,
+      name: "curveball.v1",
+      version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ setup: s.setup, sessionId: s.sessionId, speakAloud: s.speakAloud }),
     },

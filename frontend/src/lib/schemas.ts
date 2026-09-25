@@ -160,3 +160,97 @@ export const HistoryItemSchema = z.object({
   verdict: z.string(),
 });
 export type HistoryItem = z.infer<typeof HistoryItemSchema>;
+
+/* ---------- Accounts ---------- */
+export const UserSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  name: z.string(),
+  timezone: z.string(),
+  created_at: z.string(),
+});
+export type User = z.infer<typeof UserSchema>;
+
+/* ---------- Learning ---------- */
+export const LessonSchema = z.object({
+  tldr: z.string(),
+  explanation: z.array(z.string()),
+  key_points: z.array(z.string()),
+  example: z.object({ title: z.string(), body: z.string() }),
+  pitfalls: z.array(z.string()),
+  check: z.array(z.object({ question: z.string(), answer: z.string() })),
+});
+export type Lesson = z.infer<typeof LessonSchema>;
+
+export const AssignmentSchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  topic_id: z.string().nullable(),
+  category: z.string(),
+  title: z.string(),
+  blurb: z.string(),
+  explore: z.array(z.string()),
+  source: z.string(),
+  completed: z.boolean(),
+  assigned_at: z.string(),
+  completed_at: z.string().nullable(),
+  note: z.string().nullable(),
+  lesson: LessonSchema.nullable(),
+  check_done: z.boolean(),
+});
+export type Assignment = z.infer<typeof AssignmentSchema>;
+
+export const TodaySchema = z.object({
+  today: z.string(),
+  assignment: AssignmentSchema.nullable(),
+  streak: z.number(),
+  longest: z.number(),
+  queue_count: z.number(),
+});
+export type Today = z.infer<typeof TodaySchema>;
+
+export const QueueItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  blurb: z.string(),
+  source: z.string(),
+  session_id: z.string().nullable(),
+  created_at: z.string(),
+});
+export type QueueItem = z.infer<typeof QueueItemSchema>;
+
+export const PrefsSchema = z.object({ focus_areas: z.array(z.string()) });
+
+export const LevelSchema = z.object({
+  level: z.number(),
+  title: z.string(),
+  xp: z.number(),
+  level_start: z.number(),
+  next_level: z.number(),
+  progress: z.number(),
+});
+
+export const ProgressSchema = z.object({
+  today: z.string(),
+  level: LevelSchema,
+  streak: z.number(),
+  longest: z.number(),
+  learned_total: z.number(),
+  interviews_total: z.number(),
+  avg_score: z.number().nullable(),
+  best_score: z.number().nullable(),
+  rate_30: z.number(),
+  calendar: z.array(
+    z.object({
+      date: z.string(),
+      learned: z.boolean(),
+      title: z.string().nullable(),
+      category: z.string().nullable(),
+      interviews: z.number(),
+    }),
+  ),
+  balance_30: z.record(z.string(), z.number()),
+  balance_all: z.record(z.string(), z.number()),
+  score_trend: z.array(z.object({ date: z.string(), overall: z.number() })),
+});
+export type Progress = z.infer<typeof ProgressSchema>;

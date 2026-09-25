@@ -1,36 +1,52 @@
-# Mock Room
+# Curveball
 
-AI interview practice: a prep brief built from your resume, a live AI interviewer that asks real follow-ups, and an honest scored report.
+*Learn something every day. Handle any curveball.*
+
+A learning ecosystem for engineers with two loops that feed each other:
+
+- **Learn (daily):** one topic a day across five tracks (DSA, system design, language depth, fundamentals, real-world), a 5-minute AI lesson with a self-check, a one-line reflection, streaks and XP.
+- **Practice (weekly):** AI mock interviews tailored to the job and your resume, with an honest scored report. Any weak spot can be added to your learning queue as a future daily topic.
+- **Progress:** streaks, a 12-week heatmap, track balance, interview score trend, level. All derived from history.
+
+Product plan: `docs/PRODUCT_PLAN.md` · Learning spec: `docs/Learning Log PRD.md` · Interview spec: `docs/PRODUCT_SPEC.md`
 
 ```
-frontend/   Next.js 16 app (UI)
-backend/    FastAPI API (AI calls, interview rules, Postgres)
-docs/       Product spec
-prototype/  Original single-file prototype (source of truth for behaviour)
+frontend/   Next.js 16 app (UI). Calls /api/* on its own origin; Next forwards to the backend.
+backend/    FastAPI (accounts, learning engine, AI calls, interview rules, Postgres)
+docs/       Specs and plan
 ```
 
 ## Run it locally
 
-**1. Backend** (needs [uv](https://docs.astral.sh/uv/))
+**Backend** (needs [uv](https://docs.astral.sh/uv/))
 
 ```bash
 cd backend
 uv sync
-cp .env.example .env          # set DATABASE_URL; ANTHROPIC_API_KEY or AI_MOCK=true
+cp .env.example .env          # DATABASE_URL (Neon), GEMINI_API_KEY, AI_MOCK=false
 uv run alembic upgrade head   # create/update tables
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-**2. Frontend**
+**Frontend**
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local    # NEXT_PUBLIC_API_URL=http://localhost:8000
+cp .env.example .env.local    # BACKEND_URL=http://localhost:8000
 npm run dev                   # http://localhost:3000
 ```
 
-With `AI_MOCK=true` the AI returns sample responses, so everything works without an API key and costs nothing.
+With `AI_MOCK=true` every AI feature returns sample content, so the whole app works without an API key.
+
+## Operations
+
+- **Daily topics:** assigned lazily when a user opens Today. For morning notifications later, schedule
+  `POST /internal/assign-daily` with header `X-Internal-Token: $INTERNAL_TOKEN` (~06:30). Runs are logged in `job_runs`.
+- **Bring over a Learning Log history:** sign up in the app, then
+  `cd backend && uv run python -m app.cli import-learning-log --email you@example.com --dir .imports`
+- **AI provider:** `AI_PROVIDER=gemini` (default) or `anthropic`. Models per tier live in `backend/app/config.py`.
+- **Production:** set `COOKIE_SECURE=true`, `CORS_ORIGINS=<your frontend origin>`, `INTERNAL_TOKEN`, and `BACKEND_URL` on the frontend.
 
 ## Checks
 
@@ -38,12 +54,3 @@ With `AI_MOCK=true` the AI returns sample responses, so everything works without
 cd backend  && uv run ruff check . && uv run mypy && uv run pytest
 cd frontend && npm run typecheck && npm run lint && npm test && npm run test:e2e
 ```
-
-## How it fits together
-
-- The **database owns each interview**: transcript, question count, follow-up used, status. The browser only keeps your setup draft and which session is open, so a reload resumes exactly where you were.
-- The **server enforces the interview rules** (one question at a time, at most one follow-up per question, exact question count, forced closing). The model proposes; the code decides.
-- Every model response is **validated** (Pydantic on the server, Zod in the browser) and retried once if invalid. Errors reach the UI as short codes that map to friendly messages.
-- AI endpoints **stream** over Server-Sent Events and never hold a database connection while the model is thinking.
-- Each user has a **daily AI call cap**, and token usage is recorded per day.
-- **Delete my data** (History page) removes everything stored for you.

@@ -1,76 +1,73 @@
-import type { z } from "zod";
+import { z } from "zod";
 import { ApiError, isErrorCode, toApiError } from "./errors";
 import {
+  AssignmentSchema,
   BriefSchema,
   HintResultSchema,
   HistoryItemSchema,
+  LessonSchema,
+  PrefsSchema,
+  ProgressSchema,
+  QueueItemSchema,
   ReportSchema,
   SessionSchema,
+  TodaySchema,
   TurnResultSchema,
+  UserSchema,
+  type Assignment,
   type Brief,
   type HistoryItem,
+  type Lesson,
+  type Progress,
+  type QueueItem,
   type Report,
   type Session,
   type Setup,
+  type Today,
   type TurnResult,
+  type User,
 } from "./schemas";
 import { readSSE } from "./sse";
 
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+/**
+ * All calls go to our own origin (`/api/...`); Next.js forwards them to FastAPI.
+ * The session cookie is httpOnly and first-party, so there's nothing to attach by hand.
+ */
 
-/* ---------- Identity ---------- */
-
-const CLIENT_KEY = "mockroom.client";
-
-/** A random id this browser generates once. Until sign-in exists, it's who you are to the server. */
-export function getClientId(): string {
-  try {
-    let id = localStorage.getItem(CLIENT_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(CLIENT_KEY, id);
-    }
-    return id;
-  } catch {
-    // Storage blocked (private mode): an id for this page view only.
-    return (globalThis as { __mrClient?: string }).__mrClient ??= crypto.randomUUID();
-  }
+/** Called on any 401 so the app can send the user to the login screen. */
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(fn: (() => void) | null) {
+  onUnauthorized = fn;
 }
-
-export function forgetClientId() {
-  try {
-    localStorage.removeItem(CLIENT_KEY);
-  } catch {
-    /* nothing to forget */
-  }
-}
-
-function headers(extra?: Record<string, string>): Record<string, string> {
-  return { "X-Client-Id": getClientId(), ...extra };
-}
-
-/* ---------- Transport ---------- */
 
 async function errorFromResponse(res: Response): Promise<ApiError> {
+  let err: ApiError | null = null;
   try {
     const body: unknown = await res.json();
     const code = (body as { detail?: { code?: unknown } })?.detail?.code;
-    if (isErrorCode(code)) return new ApiError(code, res.status === 429 || res.status >= 500);
+    if (isErrorCode(code)) err = new ApiError(code, res.status === 429 || res.status >= 500);
   } catch {
     /* not JSON */
   }
-  if (res.status === 422) return new ApiError("bad_request", false);
-  if (res.status === 429) return new ApiError("rate_limited", true);
-  return new ApiError("upstream", true);
+  if (!err) {
+    if (res.status === 401) err = new ApiError("no_session", false);
+    else if (res.status === 422) err = new ApiError("bad_request", false);
+    else if (res.status === 429) err = new ApiError("rate_limited", true);
+    else err = new ApiError("upstream", true);
+  }
+  if (err.code === "no_session") onUnauthorized?.();
+  return err;
 }
 
-async function requestJSON<T>(path: string, init: RequestInit, schema: z.ZodType<T>): Promise<T> {
+async function call<T>(path: string, init: RequestInit, schema: z.ZodType<T> | null): Promise<T> {
   try {
-    const res = await fetch(`${API_URL}${path}`, {
+    const res = await fetch(path, {
       ...init,
-      headers: headers(init.body ? { "Content-Type": "application/json" } : undefined),
+      headers: init.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : undefined,
+      credentials: "same-origin",
     });
     if (!res.ok) throw await errorFromResponse(res);
+    if (schema === null) return undefined as T;
     const check = schema.safeParse(await res.json());
     if (!check.success) throw new ApiError("invalid_output", true);
     return check.data;
@@ -79,14 +76,9 @@ async function requestJSON<T>(path: string, init: RequestInit, schema: z.ZodType
   }
 }
 
-async function requestEmpty(path: string, init: RequestInit): Promise<void> {
-  try {
-    const res = await fetch(`${API_URL}${path}`, { ...init, headers: headers() });
-    if (!res.ok) throw await errorFromResponse(res);
-  } catch (err) {
-    throw toApiError(err);
-  }
-}
+const get = <T>(path: string, schema: z.ZodType<T>) => call(path, { method: "GET" }, schema);
+const send = <T>(method: string, path: string, body: unknown, schema: z.ZodType<T> | null) =>
+  call<T>(path, { method, body: body === undefined ? undefined : JSON.stringify(body) }, schema);
 
 type Handlers = Record<string, (data: unknown) => void>;
 
@@ -101,10 +93,11 @@ async function postStream<T>(
   let result: T | undefined;
   let streamError: ApiError | undefined;
   try {
-    const res = await fetch(`${API_URL}${path}`, {
+    const res = await fetch(path, {
       method: "POST",
-      headers: headers({ "Content-Type": "application/json", Accept: "text/event-stream" }),
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
       body: JSON.stringify(body ?? {}),
+      credentials: "same-origin",
       signal,
     });
     if (!res.ok || !res.body) throw await errorFromResponse(res);
@@ -129,19 +122,6 @@ async function postStream<T>(
   return result;
 }
 
-/* ---------- Sessions ---------- */
-
-const s = (id: string) => `/api/sessions/${encodeURIComponent(id)}`;
-
-export const createSession = (setup: Setup) =>
-  requestJSON<Session>("/api/sessions", { method: "POST", body: JSON.stringify(setup) }, SessionSchema);
-
-export const getSession = (id: string) => requestJSON<Session>(s(id), { method: "GET" }, SessionSchema);
-
-export const deleteSession = (id: string) => requestEmpty(s(id), { method: "DELETE" });
-
-export const endSession = (id: string) => requestJSON<Session>(`${s(id)}/end`, { method: "POST" }, SessionSchema);
-
 /** Progress callbacks for long AI tasks: characters written so far, and the current step. */
 export type TaskProgress = { progress: (chars: number) => void; stage: (stage: string) => void };
 
@@ -149,6 +129,49 @@ const progressHandlers = (on: TaskProgress): Handlers => ({
   progress: (d) => on.progress((d as { chars: number }).chars),
   stage: (d) => on.stage((d as { stage: string }).stage),
 });
+
+/* ---------- Accounts ---------- */
+
+export const signup = (body: { email: string; password: string; name: string; timezone: string }) =>
+  send("POST", "/api/auth/signup", body, UserSchema);
+export const login = (body: { email: string; password: string }) => send("POST", "/api/auth/login", body, UserSchema);
+export const logout = () => send<void>("POST", "/api/auth/logout", undefined, null);
+export const getMe = () => get<User>("/api/auth/me", UserSchema);
+export const updateMe = (body: { name?: string; timezone?: string }) => send("PATCH", "/api/me", body, UserSchema);
+export const changePassword = (body: { current: string; new: string }) =>
+  send<void>("POST", "/api/me/password", body, null);
+/** Delete the account and everything it owns. */
+export const deleteAccount = () => send<void>("DELETE", "/api/me", undefined, null);
+
+/* ---------- Learning ---------- */
+
+export const getToday = () => get<Today>("/api/learn/today", TodaySchema);
+export const completeToday = (note?: string) =>
+  send<Assignment>("POST", "/api/learn/today/complete", { note: note || null }, AssignmentSchema);
+export const swapToday = () => send<Assignment>("POST", "/api/learn/today/swap", {}, AssignmentSchema);
+export const saveNote = (note: string) => send<Assignment>("PUT", "/api/learn/today/note", { note }, AssignmentSchema);
+export const markCheckDone = () => send<Assignment>("POST", "/api/learn/today/check", {}, AssignmentSchema);
+export const streamLesson = (on: TaskProgress, signal?: AbortSignal) =>
+  postStream<Lesson>("/api/learn/today/lesson", {}, LessonSchema, progressHandlers(on), signal);
+export const getLearnHistory = (limit = 60) =>
+  get<Assignment[]>(`/api/learn/history?limit=${limit}`, AssignmentSchema.array());
+export const getPrefs = () => get("/api/learn/preferences", PrefsSchema);
+export const putPrefs = (focus_areas: string[]) => send("PUT", "/api/learn/preferences", { focus_areas }, PrefsSchema);
+export const getQueue = () => get<QueueItem[]>("/api/learn/queue", QueueItemSchema.array());
+export const addToQueue = (item: { title: string; blurb?: string; source?: "manual" | "interview"; session_id?: string }) =>
+  send<QueueItem>("POST", "/api/learn/queue", item, QueueItemSchema);
+export const removeFromQueue = (id: string) =>
+  send<void>("DELETE", `/api/learn/queue/${encodeURIComponent(id)}`, undefined, null);
+export const getProgress = () => get<Progress>("/api/progress", ProgressSchema);
+
+/* ---------- Interview sessions ---------- */
+
+const s = (id: string) => `/api/sessions/${encodeURIComponent(id)}`;
+
+export const createSession = (setup: Setup) => send<Session>("POST", "/api/sessions", setup, SessionSchema);
+export const getSession = (id: string) => get<Session>(s(id), SessionSchema);
+export const deleteSession = (id: string) => send<void>("DELETE", s(id), undefined, null);
+export const endSession = (id: string) => send<Session>("POST", `${s(id)}/end`, {}, SessionSchema);
 
 export function streamBrief(id: string, on: TaskProgress, signal?: AbortSignal) {
   return postStream<Brief>(`${s(id)}/brief`, {}, BriefSchema, progressHandlers(on), signal);
@@ -184,34 +207,22 @@ export function streamReport(id: string, on: TaskProgress, signal?: AbortSignal)
   return postStream<Report>(`${s(id)}/report`, {}, ReportSchema, progressHandlers(on), signal);
 }
 
-/* ---------- History & account ---------- */
-
-export const listHistory = () =>
-  requestJSON<HistoryItem[]>("/api/history", { method: "GET" }, HistoryItemSchema.array());
-
-/** Delete everything the server holds for this browser: sessions, transcripts, reports, resume. */
-export const deleteMyData = () => requestEmpty("/api/me", { method: "DELETE" });
+export const listHistory = () => get<HistoryItem[]>("/api/history", HistoryItemSchema.array());
 
 /* ---------- Misc ---------- */
 
 export async function uploadResume(file: File): Promise<string> {
   const form = new FormData();
   form.append("file", file);
-  try {
-    const res = await fetch(`${API_URL}/api/resume`, { method: "POST", body: form, headers: headers() });
-    if (!res.ok) throw await errorFromResponse(res);
-    const body = (await res.json()) as { text: string };
-    return body.text;
-  } catch (err) {
-    throw toApiError(err);
-  }
+  const r = await call("/api/resume", { method: "POST", body: form }, z.object({ text: z.string() }));
+  return r.text;
 }
 
-export type Health = { ok: boolean; mock: boolean; ai_configured: boolean; db: boolean };
+export type Health = { ok: boolean; mock: boolean; ai_configured: boolean; provider?: string; db: boolean };
 
 export async function getHealth(): Promise<Health | null> {
   try {
-    const res = await fetch(`${API_URL}/api/health`, { cache: "no-store" });
+    const res = await fetch("/api/health", { cache: "no-store" });
     return res.ok ? ((await res.json()) as Health) : null;
   } catch {
     return null;

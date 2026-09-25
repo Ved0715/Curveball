@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { PageShell, PageSkeleton, PageTitle } from "@/components/page-shell";
 import { ReportView } from "@/components/report-view";
 import { ErrorPanel } from "@/components/status";
-import { getSession } from "@/lib/api";
+import { addToQueue, getSession } from "@/lib/api";
 import { friendlyError, toApiError, type ApiError } from "@/lib/errors";
 import type { Session } from "@/lib/schemas";
 
@@ -32,8 +32,8 @@ export default function PastReportPage() {
 
   return (
     <PageShell>
-      <Link href="/history" className="mb-6 inline-flex items-center gap-2 text-sm text-muted hover:text-ink">
-        <ArrowLeft className="size-4" aria-hidden /> All interviews
+      <Link href="/progress" className="mb-6 inline-flex items-center gap-2 text-sm text-muted hover:text-ink">
+        <ArrowLeft className="size-4" aria-hidden /> Back to progress
       </Link>
       {load.status === "error" ? (
         <ErrorPanel
@@ -65,6 +65,9 @@ export default function PastReportPage() {
             role={load.session.setup.role}
             company={load.session.setup.company}
             round={load.session.setup.round}
+            onQueue={async (title, blurb) => {
+              await addToQueue({ title, blurb, source: "interview", session_id: load.session.id });
+            }}
           />
         </>
       ) : (

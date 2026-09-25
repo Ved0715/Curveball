@@ -20,7 +20,18 @@ export type ErrorCode =
   | "awaiting_answer"
   | "no_question"
   | "interview_not_finished"
-  | "daily_limit";
+  | "daily_limit"
+  | "no_session"
+  | "bad_credentials"
+  | "email_taken"
+  | "too_many_attempts"
+  | "bad_origin"
+  | "already_completed"
+  | "no_topics"
+  | "no_lesson"
+  | "focus_required"
+  | "queue_full"
+  | "bad_timezone";
 
 export class ApiError extends Error {
   constructor(
@@ -34,7 +45,7 @@ export class ApiError extends Error {
 
 const COPY: Record<ErrorCode, string> = {
   cancelled: "Stopped.",
-  network: "Couldn't reach the Mock Room server. Check your connection and try again.",
+  network: "Couldn't reach the server. Check your connection and try again.",
   not_configured: "The AI isn't set up on the server yet. Add an API key or turn on mock mode.",
   rate_limited: "Lots of people are practising right now. Wait a few seconds, then try again.",
   overloaded: "The AI is busy at the moment. Try again in a few seconds.",
@@ -54,7 +65,18 @@ const COPY: Record<ErrorCode, string> = {
   awaiting_answer: "The interviewer is waiting for your answer.",
   no_question: "There's no question to get a hint for yet.",
   interview_not_finished: "Finish or end the interview before scoring it.",
-  daily_limit: "You've reached today's practice limit. Come back tomorrow for more.",
+  daily_limit: "You've reached today's AI limit. Come back tomorrow for more.",
+  no_session: "Please log in to continue.",
+  bad_credentials: "That email and password don't match. Try again.",
+  email_taken: "There's already an account with that email. Log in instead?",
+  too_many_attempts: "Too many attempts. Take a breather and try again in a few minutes.",
+  bad_origin: "That request came from somewhere unexpected. Refresh and try again.",
+  already_completed: "You've already finished today's topic. See you tomorrow!",
+  no_topics: "No topics match your focus areas right now. Turn on another track in Settings.",
+  no_lesson: "Open the lesson first, then do the check.",
+  focus_required: "Keep at least one focus area switched on.",
+  queue_full: "Your queue is full. Learn or remove a few topics first.",
+  bad_timezone: "That timezone isn't recognised.",
 };
 
 export function friendlyError(err: unknown): string {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getClientId, streamReport, streamTurn } from "@/lib/api";
+import { getToday, setUnauthorizedHandler, streamReport, streamTurn } from "@/lib/api";
 import { ApiError } from "@/lib/errors";
 
 function sseResponse(events: [string, unknown][], status = 200) {
@@ -62,20 +62,28 @@ describe("streamTurn", () => {
 });
 
 describe("request details", () => {
-  it("sends the client id and the answer to the session's turn endpoint", async () => {
+  it("posts the answer to our own origin with the session cookie", async () => {
     const fetchMock = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async () =>
       sseResponse([["result", { kind: "question", say: "Next?", state: { main_asked: 2, followup_used: false, done: false } }]]),
     );
     vi.stubGlobal("fetch", fetchMock);
     await streamTurn("abc", { answer: "My answer", answer_seconds: 42 }, noop);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toMatch(/\/api\/sessions\/abc\/turn$/);
-    expect((init.headers as Record<string, string>)["X-Client-Id"]).toBe(getClientId());
+    expect(url).toBe("/api/sessions/abc/turn");
+    expect(init.credentials).toBe("same-origin");
     expect(JSON.parse(init.body as string)).toEqual({ answer: "My answer", answer_seconds: 42 });
   });
 
-  it("keeps the same client id across calls", () => {
-    expect(getClientId()).toBe(getClientId());
+  it("sends the user to login on a 401", async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ detail: { code: "no_session" } }), { status: 401 })),
+    );
+    await expect(getToday()).rejects.toMatchObject({ code: "no_session" });
+    expect(onUnauthorized).toHaveBeenCalledOnce();
+    setUnauthorizedHandler(null);
   });
 });
 

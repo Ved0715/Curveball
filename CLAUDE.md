@@ -1,12 +1,14 @@
-# Mock Room — AI interview practice
+# Curveball: learn daily, interview ready
 
 ## What this is
-Mock Room is an AI interview coach. A user enters a role, company, job description and resume, gets a prep brief, does a live mock interview with an AI interviewer that asks real follow-ups, and receives an honest scored report with stronger model answers written from their own experience.
+Curveball is a learning ecosystem for engineers. It merges two products:
+- **Learning Log** (`docs/Learning Log PRD.md`): a daily topic across five tracks, streaks, calendar, stats, focus areas, custom queue.
+- **Mock Room** (`docs/PRODUCT_SPEC.md`): AI mock interviews with a prep brief and an honest scored report.
+They are connected: interview weak spots can be queued as future daily topics. See `docs/PRODUCT_PLAN.md` for the product plan, IA and principles.
 
-We are turning a working single-file prototype into a real, multi-user web product.
+Brand name and tracks live in `frontend/src/lib/brand.ts`. Design tokens (funky neo-brutalist, light + dark, validated track palette) live in `frontend/src/app/globals.css`.
 
-- Working prototype: `prototype/mock-room.html` (open it in a browser to read the flow; AI calls only work inside claude.ai)
-- Full product spec, prompts and data model: @docs/PRODUCT_SPEC.md
+- Interview prototype: `prototype/mock-room.html`
 
 ## The prototype is the source of truth for behavior
 Read `prototype/mock-room.html` before building anything. Keep its user flow, its four prompts (brief, interviewer turn, hint, report) and their JSON output shapes. Improve them, but don't lose what works:
@@ -19,13 +21,13 @@ The prototype calls `window.claude.use("sample")`, which only exists inside clau
 
 ## Stack (confirm with me before changing)
 - Frontend: `frontend/` — Next.js 16 (App Router) + TypeScript (strict) + Tailwind CSS 4, Motion for animation, Zod for validation, Zustand for small client state
-- Backend: `backend/` — FastAPI (Python 3.13, managed with `uv`) + Anthropic Python SDK, streaming to the client over Server-Sent Events
+- Backend: `backend/` — FastAPI (Python 3.13, managed with `uv`); AI via Gemini (google-genai, default) or Anthropic, switched by `AI_PROVIDER`; streaming to the client over Server-Sent Events
+- Auth: email + password (argon2), server-side sessions in an httpOnly SameSite=Lax cookie; the browser calls `/api/*` on the Next origin and Next rewrites to FastAPI
 - Database: Postgres on Neon, via SQLAlchemy 2 (async, psycopg 3); schema changes only through Alembic migrations
-- Identity (until auth lands): an anonymous per-browser id sent as `X-Client-Id`
 - Deploy: frontend on Vercel; backend host to be decided
 - Tests: pytest (backend, in-memory SQLite), Vitest (frontend logic), Playwright (main flow, desktop + mobile, mock AI + throwaway SQLite)
 
-Model names live only in `backend/app/config.py` (fast = Haiku 4.5, balanced = Sonnet 5, capable = Opus 5). Look up current names in the official docs before changing them.
+Model names live only in `backend/app/config.py` (Gemini: ordered fallback lists per tier; Anthropic: Haiku 4.5 / Sonnet 5 / Opus 5). Look up current names in the provider's docs before changing them.
 
 ## How to work with me
 - I'm learning, so explain what you're doing in plain language and why, briefly.

@@ -170,5 +170,5 @@ class RateLimiter:
         self.hits.clear()
 
 
-login_limiter = RateLimiter(limit=8, window_s=15 * 60)
-signup_limiter = RateLimiter(limit=5, window_s=60 * 60)
+login_limiter = RateLimiter(limit=get_settings().login_limit_per_15min, window_s=15 * 60)
+signup_limiter = RateLimiter(limit=get_settings().signup_limit_per_hour, window_s=60 * 60)

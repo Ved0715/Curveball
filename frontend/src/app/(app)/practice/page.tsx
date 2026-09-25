@@ -26,7 +26,7 @@ function ServerNotice() {
       <div role="status" className="mb-6 flex items-center gap-3 rounded-2xl border border-bad/30 bg-bad/[0.07] p-4 text-sm">
         <WifiOff className="size-4 shrink-0 text-bad" aria-hidden />
         {health === null
-          ? "Can't reach the Mock Room server. If you're running locally, start the backend on port 8000."
+          ? "Can't reach the server. If you're running locally, start the backend on port 8000."
           : "The server can't reach its database right now. Check DATABASE_URL in backend/.env."}
       </div>
     );

@@ -1,4 +1,4 @@
-# Mock Room API (FastAPI)
+# Curveball API (FastAPI)
 
 ```bash
 uv sync
@@ -18,9 +18,14 @@ app/
   db.py            async engine + sessions (Neon Postgres via psycopg 3)
   models.py        SQLAlchemy tables
   repo.py          every database read/write
-  deps.py          current user (X-Client-Id), DB session, daily AI quota
+  auth.py          passwords (argon2), sessions (hashed token cookie), rate limits
+  learning.py      daily topic engine, streaks, XP/levels (pure + DB helpers)
+  curriculum.json  the 56-topic seed curriculum (synced at startup)
+  cli.py           sync-curriculum, import-learning-log
+  llm_gemini.py    Gemini provider with per-tier model fallback
+  deps.py          current user (session cookie), DB session, daily AI quota
   errors.py        one error shape: {"detail": {"code": "..."}}
-  routers/         sessions, history, me, resume, health
+  routers/         auth, me, learn, progress, sessions, history, resume, health, internal
   streaming.py     SSE helpers, validate + retry-once for structured output
   llm.py           the only module that calls Anthropic
   interview.py     interview state machine (rules enforced in code)

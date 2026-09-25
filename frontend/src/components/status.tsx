@@ -155,7 +155,7 @@ export function ErrorPanel({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       role="alert"
-      className="flex flex-col gap-4 rounded-2xl border border-bad/30 bg-bad/[0.07] p-5 sm:flex-row sm:items-center"
+      className="flex flex-col gap-4 rounded-2xl border-2 border-bad bg-surface p-5 shadow-[4px_4px_0_var(--bad)] sm:flex-row sm:items-center"
     >
       <CircleAlert className="size-5 shrink-0 text-bad" aria-hidden />
       <p className="flex-1 text-sm">{message}</p>
