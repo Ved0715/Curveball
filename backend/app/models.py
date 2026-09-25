@@ -238,6 +238,8 @@ class QueueItem(Base):
     blurb: Mapped[str] = mapped_column(Text, default="")
     source: Mapped[str] = mapped_column(String(12), default="manual")  # manual | interview
     session_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("sessions.id", ondelete="SET NULL"))
+    # Order in the queue (lower = sooner). Ties fall back to created_at, so new items go last.
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = _now()
 
 

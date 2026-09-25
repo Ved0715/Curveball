@@ -5,7 +5,6 @@ from collections import Counter
 from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime
 from typing import Any, Literal
-from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query, Response, status
 from pydantic import BaseModel, Field
@@ -219,7 +218,7 @@ async def stats(db: Db, user: CurrentUser) -> Stats:
     ).all()
     done = {d for d, _ in rows}
     current, longest = learning.streaks(done, day)
-    since = user.created_at.astimezone(ZoneInfo(user.timezone)).date() if user.created_at else None
+    since = learning.local_date(user.created_at, user.timezone) if user.created_at else None
     first = min(done) if done else None
     start = min(x for x in (since, first) if x is not None) if (since or first) else None
     return Stats(
@@ -297,9 +296,30 @@ QUEUE_LIMIT = 50
 @router.get("/queue")
 async def list_queue(db: Db, user: CurrentUser) -> list[QueueOut]:
     rows = await db.scalars(
-        select(QueueItem).where(QueueItem.user_id == user.id).order_by(QueueItem.created_at, QueueItem.id)
+        select(QueueItem).where(QueueItem.user_id == user.id).order_by(*learning.QUEUE_ORDER)
     )
     return [qout(q) for q in rows]
+
+
+class QueueOrderIn(BaseModel):
+    ids: list[uuid.UUID] = Field(max_length=QUEUE_LIMIT)
+
+
+@router.put("/queue/order")
+async def reorder_queue(body: QueueOrderIn, db: Db, user: CurrentUser) -> list[QueueOut]:
+    """Set the queue order (first id = learned next). Unlisted items keep their order after."""
+    rows = list(
+        await db.scalars(
+            select(QueueItem).where(QueueItem.user_id == user.id).order_by(*learning.QUEUE_ORDER)
+        )
+    )
+    by_id = {r.id: r for r in rows}
+    ordered = [by_id[i] for i in dict.fromkeys(body.ids) if i in by_id]
+    ordered += [r for r in rows if r not in ordered]
+    for pos, r in enumerate(ordered, start=1):
+        r.position = pos
+    await db.commit()
+    return [qout(q) for q in ordered]
 
 
 @router.post("/queue", status_code=status.HTTP_201_CREATED)
@@ -316,7 +336,12 @@ async def add_queue(body: QueueIn, db: Db, user: CurrentUser) -> QueueOut:
     if body.session_id is not None:
         await repo.get_owned_session(db, user.id, body.session_id)  # 404 if not theirs
     item = QueueItem(
-        user_id=user.id, title=title, blurb=body.blurb.strip(), source=body.source, session_id=body.session_id
+        user_id=user.id,
+        title=title,
+        blurb=body.blurb.strip(),
+        source=body.source,
+        session_id=body.session_id,
+        position=await learning.next_queue_position(db, user.id),
     )
     db.add(item)
     await db.commit()

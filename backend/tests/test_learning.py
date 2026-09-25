@@ -222,3 +222,24 @@ def test_internal_job_assigns_everyone_and_is_idempotent(client: TestClient, oth
     assert first == {"status": "ok", "assigned": 2, "existing": 0, "failed": 0}
     again = client.post("/internal/assign-daily", headers={"X-Internal-Token": "test-internal-token"}).json()
     assert again["assigned"] == 0 and again["existing"] == 2
+
+
+def test_queue_reorder_changes_what_comes_next(client: TestClient) -> None:
+    for t in ["First", "Second", "Third"]:
+        client.post("/api/learn/queue", json={"title": t})
+    items = client.get("/api/learn/queue").json()
+    assert [q["title"] for q in items] == ["First", "Second", "Third"]
+    ids = {q["title"]: q["id"] for q in items}
+    r = client.put("/api/learn/queue/order", json={"ids": [ids["Third"], ids["First"]]})
+    assert [q["title"] for q in r.json()] == ["Third", "First", "Second"]
+    assert client.get("/api/learn/today").json()["assignment"]["title"] == "Third"
+    client.post("/api/learn/queue", json={"title": "Fourth"})
+    assert [q["title"] for q in client.get("/api/learn/queue").json()] == ["First", "Second", "Fourth"]
+
+
+def test_queue_reorder_ignores_other_users_ids(client: TestClient, other: TestClient) -> None:
+    client.post("/api/learn/queue", json={"title": "Mine"})
+    other.post("/api/learn/queue", json={"title": "Theirs"})
+    theirs = other.get("/api/learn/queue").json()[0]["id"]
+    r = client.put("/api/learn/queue/order", json={"ids": [theirs]})
+    assert [q["title"] for q in r.json()] == ["Mine"]

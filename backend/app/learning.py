@@ -15,13 +15,14 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Assignment, LearnPreferences, QueueItem, Topic, User
 
 TRACKS = ["dsa", "system-design", "lang-depth", "fundamentals", "real-world"]
+QUEUE_ORDER = (QueueItem.position, QueueItem.created_at, QueueItem.id)
 LOOKBACK_DAYS = 60
 REAL_WORLD_EVERY = 4  # at most this many days without a real-world topic
 BALANCE_WINDOW = 14
@@ -33,6 +34,12 @@ CURRICULUM_FILE = Path(__file__).parent / "curriculum.json"
 
 def local_today(user: User, now: datetime | None = None) -> date:
     return (now or datetime.now(UTC)).astimezone(ZoneInfo(user.timezone)).date()
+
+
+def local_date(when: datetime, tz: str) -> date:
+    """The user's calendar day for a stored timestamp. Naive values (SQLite) are UTC."""
+    aware = when if when.tzinfo else when.replace(tzinfo=UTC)
+    return aware.astimezone(ZoneInfo(tz)).date()
 
 
 # ---------- Selection (pure) ----------
@@ -212,10 +219,7 @@ async def _pick(
 ) -> dict[str, Any] | None:
     if use_queue:
         item = await db.scalar(
-            select(QueueItem)
-            .where(QueueItem.user_id == user_id)
-            .order_by(QueueItem.created_at, QueueItem.id)
-            .limit(1)
+            select(QueueItem).where(QueueItem.user_id == user_id).order_by(*QUEUE_ORDER).limit(1)
         )
         if item is not None:
             await db.delete(item)
@@ -273,7 +277,8 @@ async def swap_today(db: AsyncSession, user: User, row: Assignment) -> Assignmen
                 user_id=user.id,
                 title=row.title,
                 blurb=row.blurb,
-                source=row.source.replace("queue", "manual"),
+                source="interview" if row.source == "interview" else "manual",
+                position=await next_queue_position(db, user.id),
             )
         )
     exclude = {row.topic_id} if row.topic_id else set()
@@ -296,5 +301,7 @@ async def completed_days(db: AsyncSession, user_id: uuid.UUID) -> set[date]:
     return set(rows)
 
 
-async def clear_queue(db: AsyncSession, user_id: uuid.UUID) -> None:
-    await db.execute(delete(QueueItem).where(QueueItem.user_id == user_id))
+async def next_queue_position(db: AsyncSession, user_id: uuid.UUID) -> int:
+    """Position that puts a new item at the end of the user's queue."""
+    last = await db.scalar(select(func.max(QueueItem.position)).where(QueueItem.user_id == user_id))
+    return (last or 0) + 1

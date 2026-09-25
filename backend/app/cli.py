@@ -51,7 +51,15 @@ async def import_learning_log(email: str, folder: Path) -> None:
             prefs = await learning.preferences(db, user.id)
             prefs.focus_areas = focus
             for item in raw.get("customQueue") or []:
-                db.add(QueueItem(user_id=user.id, title=item["title"][:200], blurb=item.get("blurb") or ""))
+                db.add(
+                    QueueItem(
+                        user_id=user.id,
+                        title=item["title"][:200],
+                        blurb=item.get("blurb") or "",
+                        position=await learning.next_queue_position(db, user.id),
+                    )
+                )
+                await db.flush()
             print(f"preferences: focus areas {focus}, {len(raw.get('customQueue') or [])} queued topic(s)")
 
         added = skipped = 0
