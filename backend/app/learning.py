@@ -252,7 +252,8 @@ async def _pick(
 async def assign_today(db: AsyncSession, user: User, today: date | None = None) -> Assignment | None:
     """Today's assignment, creating it if needed. Idempotent and safe to call concurrently."""
     day = today or local_today(user)
-    existing = await assignment_for(db, user.id, day)
+    user_id = user.id  # read now: a rollback below expires `user`
+    existing = await assignment_for(db, user_id, day)
     if existing is not None:
         return existing
     picked = await _pick(db, user.id, day, set(), use_queue=True)
@@ -264,7 +265,8 @@ async def assign_today(db: AsyncSession, user: User, today: date | None = None) 
         await db.commit()
     except IntegrityError:  # another request assigned it first
         await db.rollback()
-        return await assignment_for(db, user.id, day)
+        await db.refresh(user)  # callers keep using `user`; reload it explicitly (async can't lazy-load)
+        return await assignment_for(db, user_id, day)
     return row
 
 

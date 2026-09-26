@@ -1,11 +1,17 @@
 """The learning engine's rules (PRD §5.2, §6, §8), tested as pure functions and through the API."""
 
+import uuid
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import db as db_module
+from app import learning
+from app.config import get_settings
 from app.learning import (
     TRACKS,
     Past,
@@ -16,6 +22,9 @@ from app.learning import (
     select_topic,
     streaks,
 )
+from app.main import app
+from app.models import Assignment
+from tests.conftest import signup
 from tests.helpers import events
 
 D = date(2026, 9, 25)
@@ -243,3 +252,31 @@ def test_queue_reorder_ignores_other_users_ids(client: TestClient, other: TestCl
     theirs = other.get("/api/learn/queue").json()[0]["id"]
     r = client.put("/api/learn/queue/order", json={"ids": [theirs]})
     assert [q["title"] for q in r.json()] == ["Mine"]
+
+
+def test_today_survives_a_concurrent_request_creating_it_first(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Two tabs (or the shell + a page) ask for today at once: both must get the same topic."""
+    s = get_settings()
+    monkeypatch.setattr(s, "database_url", f"sqlite+aiosqlite:///{tmp_path / 'race.sqlite'}")
+    db_module.get_engine.cache_clear()
+    db_module.get_sessionmaker.cache_clear()
+    real_pick = learning._pick
+
+    async def pick_while_another_request_wins(
+        db: AsyncSession, user_id: uuid.UUID, day: date, *args: Any, **kwargs: Any
+    ) -> dict[str, Any] | None:
+        picked = await real_pick(db, user_id, day, *args, **kwargs)
+        assert picked is not None
+        async with db_module.get_sessionmaker()() as other:  # the "other request"
+            other.add(Assignment(user_id=user_id, date=day, **picked))
+            await other.commit()
+        return picked
+
+    monkeypatch.setattr(learning, "_pick", pick_while_another_request_wins)
+    with TestClient(app) as c:
+        signup(c)
+        r = c.get("/api/learn/today")
+        assert r.status_code == 200, r.text
+        assert r.json()["assignment"] is not None
