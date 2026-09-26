@@ -23,7 +23,7 @@ def test_signup_sets_http_only_cookie_and_me_works() -> None:
         me = c.get("/api/auth/me").json()
         assert me["email"] == "asha@example.com"  # normalised
         assert me["timezone"] == "Europe/London"
-        assert "password" not in str(me)
+        assert "password_hash" not in me and "$argon2" not in str(me)  # never leak the hash
 
 
 def test_signup_validation_and_duplicates() -> None:

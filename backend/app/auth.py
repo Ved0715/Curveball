@@ -88,9 +88,34 @@ async def create_user(db: AsyncSession, email: str, password: str, name: str, ti
     return user
 
 
+async def user_for_google(db: AsyncSession, sub: str, email: str, name: str, timezone: str) -> User:
+    """The account for a verified Google identity: linked by Google id, else by the same
+    email (Google verified it), else a new account without a password."""
+    user = await db.scalar(select(User).where(User.google_sub == sub))
+    if user is None:
+        user = await find_user(db, email)
+        if user is not None:
+            user.google_sub = sub
+            await db.commit()
+    if user is None:
+        user = User(
+            email=normalize_email(email),
+            password_hash=None,
+            google_sub=sub,
+            name=(name.strip() or email.split("@")[0])[:80],
+            timezone=timezone if valid_timezone(timezone) else "Asia/Kolkata",
+        )
+        db.add(user)
+        await db.flush()
+        db.add(LearnPreferences(user_id=user.id, focus_areas=list(ALL_TRACKS)))
+        await db.commit()
+    return user
+
+
 async def authenticate(db: AsyncSession, email: str, password: str) -> User | None:
     user = await find_user(db, email)
-    if user is None:
+    if user is None or user.password_hash is None:
+        # No such user, or a Google-only account: same work, same answer.
         await verify_password_async(_DUMMY_HASH, password)
         return None
     if not await verify_password_async(user.password_hash, password):

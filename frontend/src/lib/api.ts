@@ -145,8 +145,10 @@ export const signup = (body: { email: string; password: string; name: string; ti
 export const login = (body: { email: string; password: string }) => send("POST", "/api/auth/login", body, UserSchema);
 export const logout = () => send<void>("POST", "/api/auth/logout", undefined, null);
 export const getMe = () => get<User>("/api/auth/me", UserSchema);
+/** Which sign-in buttons to show (Google only when the server has a client configured). */
+export const getProviders = () => get("/api/auth/providers", z.object({ google: z.boolean() }));
 export const updateMe = (body: { name?: string; timezone?: string }) => send("PATCH", "/api/me", body, UserSchema);
-export const changePassword = (body: { current: string; new: string }) =>
+export const changePassword = (body: { current?: string; new: string }) =>
   send<void>("POST", "/api/me/password", body, null);
 /** Delete the account and everything it owns. */
 export const deleteAccount = () => send<void>("DELETE", "/api/me", undefined, null);

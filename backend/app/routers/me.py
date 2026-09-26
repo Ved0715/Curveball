@@ -25,7 +25,10 @@ async def update_profile(body: ProfileUpdate, db: Db, user: CurrentUser) -> User
 
 @router.post("/password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(body: PasswordChange, db: Db, user: CurrentUser) -> Response:
-    if not await auth.verify_password_async(user.password_hash, body.current):
+    # A Google-only account has no password yet, so there's nothing to confirm.
+    if user.password_hash is not None and not await auth.verify_password_async(
+        user.password_hash, body.current
+    ):
         raise AppError(401, "bad_credentials")
     user.password_hash = await auth.hash_password_async(body.new)
     await db.commit()

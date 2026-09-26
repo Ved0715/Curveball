@@ -47,13 +47,16 @@ def _now() -> Mapped[datetime]:
 
 
 class User(Base):
-    """An account. Email + password today; OAuth identities can be added alongside later."""
+    """An account. Signs in with email + password, Google, or both (same verified email)."""
 
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)  # stored lower-cased
-    password_hash: Mapped[str] = mapped_column(String(255))
+    # None for accounts created with Google that never set a password.
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Google's stable account id ("sub" claim); set once the account is linked to Google.
+    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
     name: Mapped[str] = mapped_column(String(80))
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Kolkata")  # IANA name
     created_at: Mapped[datetime] = _now()

@@ -168,6 +168,8 @@ export const UserSchema = z.object({
   name: z.string(),
   timezone: z.string(),
   created_at: z.string(),
+  /** False for accounts made with Google that haven't set a password. */
+  has_password: z.boolean().default(true),
 });
 export type User = z.infer<typeof UserSchema>;
 

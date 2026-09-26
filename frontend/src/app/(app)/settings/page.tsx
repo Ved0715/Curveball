@@ -10,7 +10,14 @@ import { CurveUnderline, TrackGlyph } from "@/components/brand";
 import { PageSkeleton } from "@/components/page-shell";
 import { Skel } from "@/components/skeleton";
 import { Button, Field, inputClass } from "@/components/ui";
-import { changePassword, deleteAccount, getPrefs, getQueue, putPrefs, updateMe } from "@/lib/api";
+import {
+  changePassword,
+  deleteAccount,
+  getPrefs,
+  getQueue,
+  putPrefs,
+  updateMe,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { TRACKS } from "@/lib/brand";
 import { friendlyError } from "@/lib/errors";
@@ -20,9 +27,22 @@ import type { QueueItem } from "@/lib/schemas";
 import { useStore } from "@/lib/store";
 
 /** Ruled settings row: what it is on the left, the controls on the right. */
-function Section({ id, title, lede, children }: { id?: string; title: string; lede?: ReactNode; children: ReactNode }) {
+function Section({
+  id,
+  title,
+  lede,
+  children,
+}: {
+  id?: string;
+  title: string;
+  lede?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <section id={id} className="rule grid scroll-mt-24 grid-cols-1 gap-5 pt-6 lg:grid-cols-[260px_1fr] lg:gap-10">
+    <section
+      id={id}
+      className="rule grid scroll-mt-24 grid-cols-1 gap-5 pt-6 lg:grid-cols-[260px_1fr] lg:gap-10"
+    >
       <div>
         <h2 className="text-headline">{title}</h2>
         {lede && <p className="mt-1.5 text-sm text-muted">{lede}</p>}
@@ -62,7 +82,11 @@ function ProfileSection() {
   }, [user?.timezone]);
   const [name, setName] = useState(user?.name ?? "");
   const [tz, setTz] = useState(user?.timezone ?? "Asia/Kolkata");
-  const [state, setState] = useState<{ busy: boolean; saved: boolean; error?: string }>({ busy: false, saved: false });
+  const [state, setState] = useState<{
+    busy: boolean;
+    saved: boolean;
+    error?: string;
+  }>({ busy: false, saved: false });
   if (!user) return null;
   return (
     <Section title="Profile" lede={user.email}>
@@ -80,10 +104,26 @@ function ProfileSection() {
         }}
       >
         <Field label="Name" htmlFor="name">
-          <input id="name" className={inputClass} value={name} maxLength={80} required onChange={(e) => setName(e.target.value)} />
+          <input
+            id="name"
+            className={inputClass}
+            value={name}
+            maxLength={80}
+            required
+            onChange={(e) => setName(e.target.value)}
+          />
         </Field>
-        <Field label="Timezone" hint="decides when your day rolls over" htmlFor="tz">
-          <select id="tz" className={cn(inputClass, "cursor-pointer")} value={tz} onChange={(e) => setTz(e.target.value)}>
+        <Field
+          label="Timezone"
+          hint="decides when your day rolls over"
+          htmlFor="tz"
+        >
+          <select
+            id="tz"
+            className={cn(inputClass, "cursor-pointer")}
+            value={tz}
+            onChange={(e) => setTz(e.target.value)}
+          >
             {(zones.includes(tz) ? zones : [tz, ...zones]).map((z) => (
               <option key={z}>{z}</option>
             ))}
@@ -94,7 +134,9 @@ function ProfileSection() {
             Save profile
           </Button>
           <Saved show={state.saved} />
-          {state.error && <span className="text-sm text-bad">{state.error}</span>}
+          {state.error && (
+            <span className="text-sm text-bad">{state.error}</span>
+          )}
         </div>
       </form>
     </Section>
@@ -111,7 +153,9 @@ function FocusSection() {
   }, []);
   async function toggle(id: string) {
     if (!focus) return;
-    const next = focus.includes(id) ? focus.filter((f) => f !== id) : [...focus, id];
+    const next = focus.includes(id)
+      ? focus.filter((f) => f !== id)
+      : [...focus, id];
     if (!next.length) return;
     setFocus(next);
     try {
@@ -152,9 +196,24 @@ function FocusSection() {
                   onClick={() => void toggle(t.id)}
                   className="group flex min-h-14 w-full cursor-pointer items-center gap-3 py-2 text-left disabled:cursor-not-allowed"
                 >
-                  <TrackGlyph id={t.id} size={14} className={cn("transition", !on && "opacity-35 grayscale")} />
-                  <span className={cn("flex-1 font-semibold transition-colors", on ? "text-ink" : "text-muted")}>{t.label}</span>
-                  {last && <span className="hidden text-xs text-muted sm:inline">keep one on</span>}
+                  <TrackGlyph
+                    id={t.id}
+                    size={14}
+                    className={cn("transition", !on && "opacity-35 grayscale")}
+                  />
+                  <span
+                    className={cn(
+                      "flex-1 font-semibold transition-colors",
+                      on ? "text-ink" : "text-muted",
+                    )}
+                  >
+                    {t.label}
+                  </span>
+                  {last && (
+                    <span className="hidden text-xs text-muted sm:inline">
+                      keep one on
+                    </span>
+                  )}
                   <span
                     className={cn(
                       "relative h-7 w-12 shrink-0 rounded-full border-2 border-line transition-colors",
@@ -175,7 +234,9 @@ function FocusSection() {
           })}
         </ul>
       )}
-      {error && focus !== null && <p className="mt-3 text-sm text-bad">{error}</p>}
+      {error && focus !== null && (
+        <p className="mt-3 text-sm text-bad">{error}</p>
+      )}
     </Section>
   );
 }
@@ -199,25 +260,45 @@ function QueueSection() {
           <Skel className="h-12" />
         </div>
       ) : (
-        <QueuePanel items={items} setItems={(fn) => setItems((xs) => fn(xs ?? []))} />
+        <QueuePanel
+          items={items}
+          setItems={(fn) => setItems((xs) => fn(xs ?? []))}
+        />
       )}
     </Section>
   );
 }
 
 function PasswordSection() {
+  const { user, setUser } = useAuth();
+  // Accounts made with Google start without a password; they can add one here.
+  const hasPassword = user?.has_password ?? true;
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
-  const [state, setState] = useState<{ busy: boolean; saved: boolean; error?: string }>({ busy: false, saved: false });
+  const [state, setState] = useState<{
+    busy: boolean;
+    saved: boolean;
+    error?: string;
+  }>({ busy: false, saved: false });
   return (
-    <Section title="Password" lede="Changing it keeps you signed in here.">
+    <Section
+      title={hasPassword ? "Password" : "Set a password"}
+      lede={
+        hasPassword
+          ? "Changing it keeps you signed in here."
+          : "You sign in with Google. Add a password to also log in with your email."
+      }
+    >
       <form
         className="grid grid-cols-1 gap-5 sm:grid-cols-2"
         onSubmit={async (e) => {
           e.preventDefault();
           setState({ busy: true, saved: false });
           try {
-            await changePassword({ current, new: next });
+            await changePassword(
+              hasPassword ? { current, new: next } : { new: next },
+            );
+            if (user && !hasPassword) setUser({ ...user, has_password: true });
             setCurrent("");
             setNext("");
             setState({ busy: false, saved: true });
@@ -226,17 +307,19 @@ function PasswordSection() {
           }
         }}
       >
-        <Field label="Current password" htmlFor="pw-current">
-          <input
-            id="pw-current"
-            type="password"
-            autoComplete="current-password"
-            className={inputClass}
-            required
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-          />
-        </Field>
+        {hasPassword && (
+          <Field label="Current password" htmlFor="pw-current">
+            <input
+              id="pw-current"
+              type="password"
+              autoComplete="current-password"
+              className={inputClass}
+              required
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+            />
+          </Field>
+        )}
         <Field label="New password" hint="8+ characters" htmlFor="pw-new">
           <input
             id="pw-new"
@@ -251,10 +334,12 @@ function PasswordSection() {
         </Field>
         <div className="flex items-center gap-3 sm:col-span-2">
           <Button type="submit" variant="ghost" loading={state.busy}>
-            Change password
+            {hasPassword ? "Change password" : "Set password"}
           </Button>
           <Saved show={state.saved} />
-          {state.error && <span className="text-sm text-bad">{state.error}</span>}
+          {state.error && (
+            <span className="text-sm text-bad">{state.error}</span>
+          )}
         </div>
       </form>
     </Section>
@@ -266,9 +351,14 @@ function DangerSection() {
   const { logout } = useAuth();
   const reset = useStore((s) => s.reset);
   const [confirm, setConfirm] = useState(false);
-  const [state, setState] = useState<{ busy: boolean; error?: string }>({ busy: false });
+  const [state, setState] = useState<{ busy: boolean; error?: string }>({
+    busy: false,
+  });
   return (
-    <Section title="Account" lede="Deleting removes your log, streaks, interviews, reports and resume for good.">
+    <Section
+      title="Account"
+      lede="Deleting removes your log, streaks, interviews, reports and resume for good."
+    >
       <div className="flex flex-wrap gap-3">
         <Button variant="ghost" onClick={() => void logout()}>
           <LogOut className="size-4" aria-hidden /> Log out

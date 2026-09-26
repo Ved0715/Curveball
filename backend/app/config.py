@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     # state-changing requests (CSRF defence alongside SameSite cookies).
     cors_origins: str = "http://localhost:3000"
 
+    # Public address of the web app (the Next.js origin). Google sends people back to
+    # APP_URL + /api/auth/google/callback, which must be listed in the Google console.
+    app_url: str = "http://localhost:3000"
+    # Sign in with Google (OAuth client of type "Web application"). Unset = button hidden.
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+
     # Session cookie: set COOKIE_SECURE=true in production (HTTPS only).
     cookie_secure: bool = False
     # Abuse limits per client IP. Generous on purpose: a campus or office may share one IP.
@@ -77,6 +84,14 @@ class Settings(BaseSettings):
     @property
     def ai_key_present(self) -> bool:
         return bool(self.gemini_api_key if self.ai_provider == "gemini" else self.anthropic_api_key)
+
+    @property
+    def google_enabled(self) -> bool:
+        return bool(self.google_client_id and self.google_client_secret)
+
+    @property
+    def google_redirect_uri(self) -> str:
+        return self.app_url.rstrip("/") + "/api/auth/google/callback"
 
     @property
     def cors_origin_list(self) -> list[str]:

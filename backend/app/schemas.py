@@ -128,6 +128,8 @@ class UserOut(BaseModel):
     name: str
     timezone: str
     created_at: str
+    # False for Google-only accounts: Settings offers "set a password" instead of "change".
+    has_password: bool
 
 
 class ProfileUpdate(BaseModel):
@@ -136,5 +138,6 @@ class ProfileUpdate(BaseModel):
 
 
 class PasswordChange(BaseModel):
-    current: str = Field(min_length=1, max_length=128)
+    # Empty when a Google-only account sets its first password.
+    current: str = Field(default="", max_length=128)
     new: str = Field(min_length=8, max_length=128)

@@ -17,6 +17,10 @@ def isolated(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setattr(s, "db_auto_create", True)
     monkeypatch.setattr(s, "ai_mock", True)
     monkeypatch.setattr(s, "internal_token", "test-internal-token")
+    # Fixed fake Google client, whatever is in backend/.env. Google itself is never called.
+    monkeypatch.setattr(s, "google_client_id", "test-client.apps.googleusercontent.com")
+    monkeypatch.setattr(s, "google_client_secret", "test-secret")
+    monkeypatch.setattr(s, "app_url", "http://localhost:3000")
     db_module.get_engine.cache_clear()
     db_module.get_sessionmaker.cache_clear()
     llm._client.cache_clear()

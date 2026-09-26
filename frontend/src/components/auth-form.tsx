@@ -1,19 +1,58 @@
 "use client";
 
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { login, signup } from "@/lib/api";
+import { getProviders, login, signup } from "@/lib/api";
 import { primeUser } from "@/lib/auth";
 import { BRAND } from "@/lib/brand";
 import { friendlyError } from "@/lib/errors";
+import { CurveUnderline } from "./brand";
 import { LogoMark } from "./logo";
 import { Button, Field, inputClass } from "./ui";
 
+/** Messages for ?error=… when Google sends someone back without signing them in. */
+const GOOGLE_ERRORS: Record<string, string> = {
+  google_cancelled:
+    "Google sign-in was cancelled. Try again, or log in with your email.",
+  google_failed: "We couldn't sign you in with Google. Please try again.",
+  google_unverified:
+    "That Google account's email isn't verified yet. Verify it with Google, or use your email instead.",
+  google_unavailable:
+    "Google sign-in isn't set up on this server yet. Use your email for now.",
+  too_many_attempts:
+    "Too many sign-in attempts. Wait a few minutes and try again.",
+};
+
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 48 48" className="size-5" aria-hidden>
+      <path
+        fill="#FFC107"
+        d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"
+      />
+      <path
+        fill="#FF3D00"
+        d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"
+      />
+      <path
+        fill="#4CAF50"
+        d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"
+      />
+      <path
+        fill="#1976D2"
+        d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"
+      />
+    </svg>
+  );
+}
+
 function safeNext(next: string | null) {
   // Only same-site paths: never redirect to another origin after login.
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/today";
+  return next && next.startsWith("/") && !next.startsWith("//")
+    ? next
+    : "/today";
 }
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
@@ -21,14 +60,23 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const params = useSearchParams();
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<string | undefined>(
+    () => GOOGLE_ERRORS[params.get("error") ?? ""],
+  );
+  // null while we ask the server; false hides the button (Google not configured).
+  const [google, setGoogle] = useState<boolean | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const isSignup = mode === "signup";
   const next = safeNext(params.get("next"));
 
-  // Load the destination's code while the user types, so the hop after login is instant.
+  // No router.prefetch(next) here: prefetching while signed out caches the proxy's
+  // "go to /login" answer, and the router would replay it after login (production only).
+
   useEffect(() => {
-    router.prefetch(next);
-  }, [router, next]);
+    getProviders()
+      .then((p) => setGoogle(p.google))
+      .catch(() => setGoogle(false));
+  }, []);
 
   // Inputs are uncontrolled and read on submit, so anything typed before the page finished
   // loading is kept (a controlled input would be reset when React takes over).
@@ -41,8 +89,13 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     setBusy(true);
     setError(undefined);
     try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
-      primeUser(isSignup ? await signup({ name, email, password, timezone }) : await login({ email, password }));
+      const timezone =
+        Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
+      primeUser(
+        isSignup
+          ? await signup({ name, email, password, timezone })
+          : await login({ email, password }),
+      );
       router.replace(next);
     } catch (err) {
       setError(friendlyError(err));
@@ -60,11 +113,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         <h1 className="mt-5 font-display text-4xl font-extrabold tracking-tight">
           {isSignup ? (
             <>
-              Start your <em className="text-gradient">streak</em>
+              Start your <CurveUnderline>streak</CurveUnderline>
             </>
           ) : (
             <>
-              Log in to <em className="text-gradient">{BRAND}</em>
+              Log in to <CurveUnderline>{BRAND}</CurveUnderline>
             </>
           )}
         </h1>
@@ -74,15 +127,79 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             : "Your streak missed you."}
         </p>
 
+        {google !== false && (
+          <div className="mt-7">
+            {google === null ? (
+              <span className="skeleton block h-12 rounded-xl" aria-hidden />
+            ) : (
+              // A plain GET form: a full page load to the API, which redirects to Google.
+              <form
+                action="/api/auth/google/start"
+                method="get"
+                onSubmit={(e) => {
+                  const tz = e.currentTarget.elements.namedItem(
+                    "tz",
+                  ) as HTMLInputElement;
+                  tz.value =
+                    Intl.DateTimeFormat().resolvedOptions().timeZone ||
+                    "Asia/Kolkata";
+                  setLeaving(true);
+                }}
+              >
+                <input type="hidden" name="next" value={next} />
+                <input type="hidden" name="tz" defaultValue="" />
+                <button
+                  type="submit"
+                  disabled={leaving}
+                  aria-busy={leaving || undefined}
+                  className="press neo-sm flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-surface font-semibold disabled:opacity-60"
+                >
+                  {leaving ? (
+                    <LoaderCircle className="size-5 animate-spin" aria-hidden />
+                  ) : (
+                    <GoogleMark />
+                  )}
+                  Continue with Google
+                </button>
+              </form>
+            )}
+            <p
+              className="mt-6 flex items-center gap-3 text-xs font-semibold text-muted uppercase"
+              aria-hidden
+            >
+              <span className="h-0.5 flex-1 bg-line-soft" /> or with email{" "}
+              <span className="h-0.5 flex-1 bg-line-soft" />
+            </p>
+          </div>
+        )}
+
         {/* method=post: if submitted before JavaScript loads, credentials never end up in a URL. */}
-        <form method="post" onSubmit={(e) => void submit(e)} className="mt-7 grid gap-5">
+        <form
+          method="post"
+          onSubmit={(e) => void submit(e)}
+          className={`${google === false ? "mt-7" : "mt-5"} grid gap-5`}
+        >
           {isSignup && (
             <Field label="Your name" htmlFor="name">
-              <input id="name" name="name" className={inputClass} autoComplete="name" required maxLength={80} />
+              <input
+                id="name"
+                name="name"
+                className={inputClass}
+                autoComplete="name"
+                required
+                maxLength={80}
+              />
             </Field>
           )}
           <Field label="Email" htmlFor="email">
-            <input id="email" name="email" type="email" className={inputClass} autoComplete="email" required />
+            <input
+              id="email"
+              name="email"
+              type="email"
+              className={inputClass}
+              autoComplete="email"
+              required
+            />
           </Field>
           <Field
             label="Password"
@@ -95,7 +212,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
                 className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-muted hover:text-ink"
                 aria-label={show ? "Hide password" : "Show password"}
               >
-                {show ? <EyeOff className="size-3.5" aria-hidden /> : <Eye className="size-3.5" aria-hidden />}
+                {show ? (
+                  <EyeOff className="size-3.5" aria-hidden />
+                ) : (
+                  <Eye className="size-3.5" aria-hidden />
+                )}
                 {show ? "Hide" : "Show"}
               </button>
             }
@@ -112,12 +233,16 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             />
           </Field>
           {error && (
-            <p role="alert" className="rounded-xl border-2 border-bad bg-bad/10 px-4 py-3 text-sm font-medium">
+            <p
+              role="alert"
+              className="rounded-xl border-2 border-bad bg-bad/10 px-4 py-3 text-sm font-medium"
+            >
               {error}
             </p>
           )}
           <Button type="submit" size="lg" loading={busy}>
-            {isSignup ? "Create account" : "Log in"} <ArrowRight className="size-4" aria-hidden />
+            {isSignup ? "Create account" : "Log in"}{" "}
+            <ArrowRight className="size-4" aria-hidden />
           </Button>
         </form>
         <p className="mt-6 text-center text-sm text-muted">
