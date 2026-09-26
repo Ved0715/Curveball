@@ -320,3 +320,14 @@ def test_deleting_the_account_removes_all_work(client: TestClient) -> None:
             ]
 
     assert asyncio.run(counts()) == [0, 0, 0, 0]
+
+
+def test_shipped_leaves_count_toward_xp(client: TestClient) -> None:
+    before = client.get("/api/progress").json()
+    sid, root = new_session(client)
+    a, b = decompose(sid, root, [{"title": "A"}, {"title": "B"}])
+    finish(client, a)
+    client.post(f"/api/work/nodes/{b}/status", json={"status": "not_an_issue", "rationale": "Duplicate of A"})
+    after = client.get("/api/progress").json()
+    assert after["shipped_total"] == 1  # not_an_issue isn't shipping
+    assert after["level"]["xp"] - before["level"]["xp"] == 5

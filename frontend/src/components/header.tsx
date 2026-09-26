@@ -1,12 +1,13 @@
 "use client";
 
-import { CalendarCheck2, ChartNoAxesColumn, Flame, LogOut, Mic, Search, Settings } from "lucide-react";
+import { ArrowUpRight, CalendarCheck2, ChartNoAxesColumn, Flame, LogOut, Mic, Search, Settings } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { getToday } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { WORK_BRAND } from "@/lib/brand";
 import { cn } from "@/lib/format";
 import { spring } from "@/lib/motion";
 import { useStore } from "@/lib/store";
@@ -15,6 +16,7 @@ import { Ball } from "./brand";
 import { useCommandPalette } from "./command";
 import { Logo } from "./logo";
 import { ThemeToggle } from "./theme";
+import { DiamondGlyph, WorldDoor } from "./world-gate";
 import { Kbd } from "./ui";
 
 /* ---------- Public site header ---------- */
@@ -114,7 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const streak = useStreak();
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[252px_1fr]">
+    <div id="world" className="min-h-dvh origin-center lg:grid lg:grid-cols-[252px_1fr]">
       {/* Desktop sidebar: type-led, the ball marks where you are */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r-2 border-line px-5 py-6 lg:flex">
         <Logo href="/today" />
@@ -154,6 +156,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
+        {/* The door to the Work world: a place change, so it looks like a door, not a link. */}
+        <WorldDoor
+          href="/bullpen"
+          world="work"
+          className="group mt-8 flex w-full cursor-pointer items-center gap-3 rounded-2xl border-2 border-line bg-[#0a0d14] p-3 text-left text-[#eef3ff] shadow-[4px_4px_0_var(--shadow-color)] transition-transform hover:-translate-y-0.5 active:translate-y-0"
+        >
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-[#dfe8ff]/20 bg-[#121724] transition-transform group-hover:rotate-45">
+            <DiamondGlyph size={26} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-lg leading-tight font-extrabold">{WORK_BRAND}</span>
+            <span className="block text-xs text-[#9ba7c0]">Ship real work with agents</span>
+          </span>
+          <ArrowUpRight className="size-4 text-[#c8f23c] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
+        </WorldDoor>
+
         <div className="mt-auto">
           <div className="rule-soft pt-5">
             <p className="text-label text-muted">Streak</p>
@@ -191,6 +209,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Logo href="/today" />
           <div className="flex items-center gap-2">
             <StreakChip />
+            <WorldDoor
+              href="/bullpen"
+              world="work"
+              aria-label={`Enter ${WORK_BRAND}`}
+              className="grid size-10 cursor-pointer place-items-center rounded-xl border-2 border-line bg-[#0a0d14] shadow-[2px_2px_0_var(--shadow-color)]"
+            >
+              <DiamondGlyph size={22} />
+            </WorldDoor>
             <SearchButton compact />
             <ThemeToggle />
           </div>

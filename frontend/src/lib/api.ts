@@ -14,6 +14,12 @@ import {
   TodaySchema,
   TurnResultSchema,
   UserSchema,
+  ApiTokenSchema,
+  WorkEventSchema,
+  WorkNodeSchema,
+  WorkSessionSchema,
+  WorkTreeSchema,
+  type ApiToken,
   type Assignment,
   type Brief,
   type HistoryItem,
@@ -26,6 +32,11 @@ import {
   type Today,
   type TurnResult,
   type User,
+  type WorkEvent,
+  type WorkNode,
+  type WorkSession,
+  type WorkStatus,
+  type WorkTree,
 } from "./schemas";
 import { readSSE } from "./sse";
 
@@ -44,8 +55,11 @@ async function errorFromResponse(res: Response): Promise<ApiError> {
   let err: ApiError | null = null;
   try {
     const body: unknown = await res.json();
-    const code = (body as { detail?: { code?: unknown } })?.detail?.code;
-    if (isErrorCode(code)) err = new ApiError(code, res.status === 429 || res.status >= 500);
+    const detail = (body as { detail?: { code?: unknown; message?: unknown } })?.detail;
+    const code = detail?.code;
+    const message = typeof detail?.message === "string" && res.status < 500 ? detail.message : undefined;
+    if (isErrorCode(code)) err = new ApiError(code, res.status === 429 || res.status >= 500, message);
+    else if (message) err = new ApiError(res.status === 404 ? "not_found" : "bad_request", false, message);
   } catch {
     /* not JSON */
   }
@@ -168,7 +182,7 @@ export const getLearnHistory = (limit = 60) =>
 export const getPrefs = () => get("/api/learn/preferences", PrefsSchema);
 export const putPrefs = (focus_areas: string[]) => send("PUT", "/api/learn/preferences", { focus_areas }, PrefsSchema);
 export const getQueue = () => get<QueueItem[]>("/api/learn/queue", QueueItemSchema.array());
-export const addToQueue = (item: { title: string; blurb?: string; source?: "manual" | "interview"; session_id?: string }) =>
+export const addToQueue = (item: { title: string; blurb?: string; source?: "manual" | "interview" | "work"; session_id?: string }) =>
   send<QueueItem>("POST", "/api/learn/queue", item, QueueItemSchema);
 /** Set queue order: first id is learned next. */
 export const reorderQueue = (ids: string[]) =>
@@ -221,6 +235,56 @@ export function streamReport(id: string, on: TaskProgress, signal?: AbortSignal)
 }
 
 export const listHistory = () => get<HistoryItem[]>("/api/history", HistoryItemSchema.array());
+
+/* ---------- Bullpen (Work world) ---------- */
+
+const w = (path: string) => `/api/work${path}`;
+const enc = encodeURIComponent;
+
+export const listWorkSessions = (archived = false) =>
+  get<WorkSession[]>(w(`/sessions${archived ? "?archived=true" : ""}`), WorkSessionSchema.array());
+export const createWorkSession = (body: { title: string; prompt?: string; repo?: string }) =>
+  send<WorkSession>("POST", w("/sessions"), body, WorkSessionSchema);
+export const getWorkTree = (id: string) => get<WorkTree>(w(`/sessions/${enc(id)}`), WorkTreeSchema);
+export const patchWorkSession = (id: string, body: { title?: string; status?: "active" | "archived" }) =>
+  send<WorkSession>("PATCH", w(`/sessions/${enc(id)}`), body, WorkSessionSchema);
+export const deleteWorkSession = (id: string) => send<void>("DELETE", w(`/sessions/${enc(id)}`), undefined, null);
+/** Not deduped: each poll must really hit the server. */
+export const getWorkEvents = (id: string, since: number) =>
+  call<WorkEvent[]>(w(`/sessions/${enc(id)}/events?since=${since}`), { method: "GET" }, WorkEventSchema.array());
+
+export type NodeFields = Partial<
+  Pick<
+    WorkNode,
+    | "title"
+    | "problem_statement"
+    | "root_cause"
+    | "code_description"
+    | "solution_description"
+    | "files"
+    | "tags"
+    | "acceptance_criteria"
+    | "risk"
+    | "confidence"
+    | "depends_on"
+    | "artifacts"
+  >
+>;
+export const addWorkNode = (sessionId: string, body: NodeFields & { parent_id: string; title: string }) =>
+  send<WorkNode>("POST", w(`/sessions/${enc(sessionId)}/nodes`), body, WorkNodeSchema);
+export const patchWorkNode = (id: string, body: NodeFields) =>
+  send<WorkNode>("PATCH", w(`/nodes/${enc(id)}`), body, WorkNodeSchema);
+export const setWorkStatus = (id: string, status: WorkStatus, rationale?: string) =>
+  send<WorkNode>("POST", w(`/nodes/${enc(id)}/status`), { status, rationale: rationale || null }, WorkNodeSchema);
+export const addWorkNote = (id: string, text: string) =>
+  send<WorkNode>("POST", w(`/nodes/${enc(id)}/notes`), { text }, WorkNodeSchema);
+export const deleteWorkNode = (id: string) => send<void>("DELETE", w(`/nodes/${enc(id)}`), undefined, null);
+export const learnFromNode = (id: string, title?: string) =>
+  send("POST", w(`/nodes/${enc(id)}/learn`), { title: title || null }, z.object({ id: z.string(), title: z.string() }));
+
+export const listApiTokens = () => get<ApiToken[]>(w("/tokens"), ApiTokenSchema.array());
+export const createApiToken = (name: string) => send<ApiToken>("POST", w("/tokens"), { name }, ApiTokenSchema);
+export const revokeApiToken = (id: string) => send<void>("DELETE", w(`/tokens/${enc(id)}`), undefined, null);
 
 /* ---------- Misc ---------- */
 

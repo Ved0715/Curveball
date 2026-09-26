@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Fast, optimistic routing on the presence of the session cookie. The API still checks the
 // session on every request, so a stale or forged cookie just ends at the login screen.
-const APP = ["/today", "/practice", "/progress", "/settings"];
+const APP = ["/today", "/practice", "/progress", "/settings", "/bullpen"];
 const AUTH = ["/login", "/signup"];
 
 export function proxy(request: NextRequest) {
@@ -21,5 +21,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/signup", "/today/:path*", "/practice/:path*", "/progress/:path*", "/settings/:path*"],
+  matcher: ["/", "/login", "/signup", "/today/:path*", "/practice/:path*", "/progress/:path*", "/settings/:path*", "/bullpen/:path*"],
 };

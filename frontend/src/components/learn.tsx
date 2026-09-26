@@ -350,6 +350,7 @@ function QueueRow({
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium">{item.title}</span>
         {item.source === "interview" && <span className="text-xs font-semibold text-muted">from your interview</span>}
+        {item.source === "work" && <span className="text-xs font-semibold text-muted">from your Bullpen work</span>}
       </span>
       <button
         type="button"
@@ -439,7 +440,7 @@ export function QueuePanel({
         label: "Undo",
         onClick: async () => {
           await done.catch(() => undefined);
-          const restored = await addToQueue({ title: item.title, blurb: item.blurb, source: item.source === "interview" ? "interview" : "manual" });
+          const restored = await addToQueue({ title: item.title, blurb: item.blurb, source: item.source === "interview" || item.source === "work" ? item.source : "manual" });
           const order = before.map((x) => (x.id === item.id ? restored.id : x.id)).filter((id) => !id.startsWith("temp-"));
           setItems(() => before.map((x) => (x.id === item.id ? restored : x)));
           await reorderQueue(order).catch(() => undefined);

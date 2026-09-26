@@ -175,6 +175,12 @@ function StatLine({ p }: { p: Progress }) {
           {p.avg_score !== null && <>, averaging {n(Math.round(p.avg_score))}</>}
         </>
       )}
+      {p.shipped_total > 0 && (
+        <>
+          {" "}
+          · {n(p.shipped_total)} {p.shipped_total === 1 ? "leaf" : "leaves"} shipped in Bullpen
+        </>
+      )}
       .
     </p>
   );
@@ -243,7 +249,7 @@ export default function ProgressPage() {
             <div className="mt-4">
               <LevelBar level={p.level} />
             </div>
-            <p className="mt-3 text-xs text-muted">XP: topic 10 · note 5 · quick check 5 · interview 20 + score/10</p>
+            <p className="mt-3 text-xs text-muted">XP: topic 10 · note 5 · quick check 5 · interview 20 + score/10 · shipped leaf 5</p>
           </div>
         </section>
 

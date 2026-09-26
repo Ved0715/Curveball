@@ -1,6 +1,8 @@
 /** Product identity: change the name here and it changes everywhere. */
 export const BRAND = "Curveball";
 export const TAGLINE = "Learn something every day. Handle any curveball.";
+/** The Work world: agent-driven task trees (docs/BULLPEN_PLAN.md). Rename here. */
+export const WORK_BRAND = "Bullpen";
 
 export type TrackId = "dsa" | "system-design" | "lang-depth" | "fundamentals" | "real-world" | "custom";
 

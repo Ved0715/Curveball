@@ -239,6 +239,7 @@ export const ProgressSchema = z.object({
   longest: z.number(),
   learned_total: z.number(),
   interviews_total: z.number(),
+  shipped_total: z.number().default(0),
   avg_score: z.number().nullable(),
   best_score: z.number().nullable(),
   rate_30: z.number(),
@@ -256,3 +257,98 @@ export const ProgressSchema = z.object({
   score_trend: z.array(z.object({ date: z.string(), overall: z.number() })),
 });
 export type Progress = z.infer<typeof ProgressSchema>;
+
+/* ---------- Bullpen (Work world) ---------- */
+export const WORK_STATUSES = [
+  "open",
+  "in_progress",
+  "partial",
+  "decision_needed",
+  "blocked",
+  "done",
+  "not_an_issue",
+] as const;
+export const WorkStatusSchema = z.enum(WORK_STATUSES);
+export type WorkStatus = z.infer<typeof WorkStatusSchema>;
+
+export const WorkProgressSchema = z.object({
+  leaves: z.number(),
+  done: z.number(),
+  in_progress: z.number(),
+  blocked: z.number(),
+  decision_needed: z.number(),
+  nodes: z.number(),
+});
+export type WorkProgress = z.infer<typeof WorkProgressSchema>;
+
+export const WorkSessionSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  prompt: z.string(),
+  repo: z.string(),
+  status: z.enum(["active", "resolved", "archived"]),
+  node_budget: z.number(),
+  max_depth: z.number(),
+  created_at: z.string().nullable(),
+  updated_at: z.string().nullable(),
+  resolved_at: z.string().nullable(),
+  progress: WorkProgressSchema.optional(),
+});
+export type WorkSession = z.infer<typeof WorkSessionSchema>;
+
+export const WorkNodeSchema = z.object({
+  id: z.string(),
+  parent_id: z.string().nullable(),
+  position: z.number(),
+  depth: z.number(),
+  title: z.string(),
+  problem_statement: z.string(),
+  root_cause: z.string(),
+  code_description: z.string(),
+  solution_description: z.string(),
+  files: z.array(z.string()),
+  status: WorkStatusSchema,
+  is_leaf: z.boolean(),
+  depends_on: z.array(z.string()),
+  owner: z.string().nullable(),
+  claimed_at: z.string().nullable(),
+  tags: z.array(z.string()),
+  risk: z.enum(["low", "medium", "high"]).nullable(),
+  confidence: z.enum(["low", "medium", "high"]).nullable(),
+  acceptance_criteria: z.array(z.string()),
+  artifacts: z.record(z.string(), z.string()),
+  notes: z.array(z.object({ at: z.string(), actor: z.string(), text: z.string() })),
+  created_at: z.string().nullable(),
+  updated_at: z.string().nullable(),
+  resolved_at: z.string().nullable(),
+});
+export type WorkNode = z.infer<typeof WorkNodeSchema>;
+
+export const WorkTreeSchema = z.object({
+  session: WorkSessionSchema,
+  nodes: z.array(WorkNodeSchema),
+  ready: z.array(z.string()),
+  last_event_id: z.number(),
+});
+export type WorkTree = z.infer<typeof WorkTreeSchema>;
+
+export const WorkEventSchema = z.object({
+  id: z.number(),
+  node_id: z.string().nullable(),
+  actor: z.string(),
+  kind: z.string(),
+  detail: z.record(z.string(), z.unknown()),
+  created_at: z.string().nullable(),
+});
+export type WorkEvent = z.infer<typeof WorkEventSchema>;
+
+export const ApiTokenSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  prefix: z.string(),
+  created_at: z.string(),
+  last_used_at: z.string().nullable(),
+  /** Present only in the create response: the one time the raw token is shown. */
+  token: z.string().optional(),
+});
+export type ApiToken = z.infer<typeof ApiTokenSchema>;

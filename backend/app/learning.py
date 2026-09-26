@@ -142,6 +142,7 @@ def completion_rate(done_days: set[date], today: date, window: int, since: date 
 
 
 XP_LEARNED, XP_NOTE, XP_CHECK, XP_INTERVIEW = 10, 5, 5, 20
+XP_SHIPPED = 5  # a leaf done in Bullpen: Ship feeds your curve too
 LEVELS = [
     "Rookie", "Apprentice", "Builder", "Debugger", "Problem Solver",
     "Systems Thinker", "Tech Lead Energy", "Staff Material", "Curveball Legend",

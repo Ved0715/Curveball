@@ -31,12 +31,15 @@ export type ErrorCode =
   | "no_lesson"
   | "focus_required"
   | "queue_full"
-  | "bad_timezone";
+  | "bad_timezone"
+  | "too_many_tokens";
 
 export class ApiError extends Error {
   constructor(
     public code: ErrorCode,
     public retryable = true,
+    /** A server-written explanation meant for people (Bullpen rules say how to fix things). */
+    public detail?: string,
   ) {
     super(code);
     this.name = "ApiError";
@@ -77,10 +80,11 @@ const COPY: Record<ErrorCode, string> = {
   focus_required: "Keep at least one focus area switched on.",
   queue_full: "Your queue is full. Learn or remove a few topics first.",
   bad_timezone: "That timezone isn't recognised.",
+  too_many_tokens: "You have 10 active tokens. Revoke one you no longer use first.",
 };
 
 export function friendlyError(err: unknown): string {
-  if (err instanceof ApiError) return COPY[err.code];
+  if (err instanceof ApiError) return err.detail ?? COPY[err.code];
   return COPY.upstream;
 }
 

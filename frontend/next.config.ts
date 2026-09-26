@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   turbopack: { root: __dirname },
   // The dev-only badge sits over the mobile tab bar.
   devIndicators: false,
+  // Lets a phone on the same wifi open the dev server at this machine's LAN IP (e.g. to
+  // test the mobile UI or the mic). Dev-only; production doesn't use this at all.
+  allowedDevOrigins: ["192.168.0.3"],
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${backend}/api/:path*` }];
   },

@@ -5,13 +5,9 @@ import { useEffect, useRef } from "react";
 import { useWorldRevealed } from "@/components/world-gate";
 import { enter } from "@/lib/motion";
 
-/**
- * Re-mounts on every navigation: each page rises in gently, and focus moves to the new
- * page's heading so screen readers announce where you are.
- */
-export default function AppTemplate({ children }: { children: React.ReactNode }) {
+/** Same page behaviour as Learn: rise in, focus the heading. Holds until a world reveal opens. */
+export default function WorkTemplate({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  // Coming back from Bullpen, hold the entrance until the reveal opens.
   const revealed = useWorldRevealed();
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -25,7 +21,7 @@ export default function AppTemplate({ children }: { children: React.ReactNode })
     return () => clearTimeout(t);
   }, []);
   return (
-    <motion.div ref={ref} variants={enter} initial="hidden" animate={revealed ? "show" : "hidden"} className="[&_h1:focus]:outline-none">
+    <motion.div ref={ref} variants={enter} initial="hidden" animate={revealed ? "show" : "hidden"}>
       {children}
     </motion.div>
   );

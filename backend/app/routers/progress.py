@@ -6,11 +6,11 @@ from typing import Any
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app import learning
 from app.deps import CurrentUser, Db
-from app.models import Assignment, InterviewSession, Report
+from app.models import Assignment, InterviewSession, Report, WorkNode, WorkSession
 
 router = APIRouter(prefix="/api/progress", tags=["progress"])
 
@@ -30,6 +30,7 @@ class Progress(BaseModel):
     longest: int
     learned_total: int
     interviews_total: int
+    shipped_total: int  # Bullpen leaves done
     avg_score: float | None
     best_score: int | None
     rate_30: float
@@ -57,8 +58,18 @@ async def progress(db: Db, user: CurrentUser, days: int = Query(84, ge=7, le=371
     ).all()
     report_days = [learning.local_date(c, user.timezone) for _, c in reports]
 
+    shipped = int(
+        await db.scalar(
+            select(func.count())
+            .select_from(WorkNode)
+            .join(WorkSession, WorkSession.id == WorkNode.session_id)
+            .where(WorkSession.user_id == user.id, WorkNode.is_leaf, WorkNode.status == "done")
+        )
+        or 0
+    )
     xp = (
-        learning.XP_LEARNED * len(done)
+        learning.XP_SHIPPED * shipped
+        + learning.XP_LEARNED * len(done)
         + learning.XP_NOTE * sum(1 for a in done if a.note)
         + learning.XP_CHECK * sum(1 for a in rows if a.check_done)
         + sum(learning.XP_INTERVIEW + round(o / 10) for o, _ in reports)
@@ -86,6 +97,7 @@ async def progress(db: Db, user: CurrentUser, days: int = Query(84, ge=7, le=371
     return Progress(
         today=today.isoformat(),
         level=learning.level_for(xp),
+        shipped_total=shipped,
         streak=current,
         longest=longest,
         learned_total=len(done),

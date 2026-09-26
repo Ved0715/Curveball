@@ -91,6 +91,55 @@
   color-scheme: dark;
 }
 
+/* ---------- The Work world (Bullpen): "night shift" ----------
+   Always dark, whatever the Learn theme: blueprint grid instead of paper dots, cyan
+   floodlight shadows, same lime for actions. Set on <html> so portals (sheets, toasts)
+   pick it up too. Declared after [data-theme] with higher specificity, so it wins. */
+html[data-world="work"] {
+  --bg: #0a0d14;
+  --bg-2: #0e121b;
+  --surface: #121724;
+  --surface-strong: #1a2131;
+  --line: #dfe8ff;
+  --line-strong: #dfe8ff;
+  --line-soft: rgb(223 232 255 / 0.13);
+  --ink: #eef3ff;
+  --muted: #9ba7c0;
+  --shadow-color: rgb(94 230 255 / 0.32);
+
+  --pop: #c8f23c;
+  --pop-ink: #0a0d14;
+  --pink: #ff6ba8;
+  --violet: #9a7dff;
+  --violet-deep: #5238c4;
+  --sun: #ffd23f;
+  --sky: #5ee6ff;
+
+  --accent: #5ee6ff;
+  --accent-2: #ff6ba8;
+  --accent-3: #9a7dff;
+  --accent-ink: #0a0d14;
+
+  --good: #3ed28a;
+  --warn: #ffc43d;
+  --bad: #ff6b7a;
+  --focus: #5ee6ff;
+
+  --track-dsa: #e2672f;
+  --track-system-design: #6f7ef5;
+  --track-lang-depth: #14a375;
+  --track-fundamentals: #bf8a10;
+  --track-real-world: #9a60f2;
+  --track-custom: #e0457c;
+
+  --dot: rgb(94 230 255 / 0.06);
+  color-scheme: dark;
+  background-image:
+    linear-gradient(var(--dot) 1px, transparent 1px),
+    linear-gradient(90deg, var(--dot) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-bg-2: var(--bg-2);
