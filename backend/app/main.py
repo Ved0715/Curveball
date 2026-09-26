@@ -12,7 +12,7 @@ from app.config import get_settings
 from app.db import get_engine, get_sessionmaker
 from app.errors import install_error_handlers
 from app.models import Base
-from app.routers import auth, health, history, internal, learn, me, progress, resume, sessions
+from app.routers import auth, health, history, internal, learn, me, progress, resume, sessions, work
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -73,6 +73,7 @@ def create_app() -> FastAPI:
         history.router,
         resume.router,
         internal.router,
+        work.router,
     ):
         app.include_router(r)
     return app

@@ -25,6 +25,13 @@ def install_error_handlers(app: FastAPI) -> None:
     async def app_error(_req: Request, exc: AppError) -> JSONResponse:
         return JSONResponse({"detail": {"code": exc.code}}, status_code=exc.status)
 
+    from app.work import WorkError  # local: keep errors.py importable without the domain
+
+    @app.exception_handler(WorkError)
+    async def work_error(_req: Request, exc: WorkError) -> JSONResponse:
+        # Rule messages say how to fix things; they're safe to show and the UI does.
+        return JSONResponse({"detail": {"code": exc.code, "message": exc.message}}, status_code=exc.status)
+
     @app.exception_handler(RequestValidationError)
     async def validation_error(_req: Request, exc: RequestValidationError) -> JSONResponse:
         fields = [".".join(str(p) for p in e["loc"][1:]) for e in exc.errors()]

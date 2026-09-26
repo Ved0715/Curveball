@@ -6,11 +6,12 @@ Change a table here, then create a migration: `uv run alembic revision --autogen
 """
 
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     Date,
     DateTime,
     ForeignKey,
@@ -40,6 +41,10 @@ NAMING = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING)
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC)
 
 
 def _now() -> Mapped[datetime]:
@@ -257,3 +262,101 @@ class JobRun(Base):
     detail: Mapped[dict[str, Any]] = mapped_column(JsonB, default=dict)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime] = _now()
+
+
+# ---------- Bullpen (Work): task trees driven by coding agents over MCP ----------
+
+
+class WorkSession(Base):
+    """One task tree: a root task and everything it decomposes into (docs/BULLPEN_PLAN.md)."""
+
+    __tablename__ = "work_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    prompt: Mapped[str] = mapped_column(Text, default="")
+    repo: Mapped[str] = mapped_column(String(300), default="")
+    status: Mapped[str] = mapped_column(String(12), default="active")  # active | resolved | archived
+    # Runaway guard: decomposition stops here instead of trusting the model's judgment.
+    node_budget: Mapped[int] = mapped_column(Integer, default=150)
+    max_depth: Mapped[int] = mapped_column(Integer, default=6)
+    created_at: Mapped[datetime] = _now()
+    # Python-side onupdate: the value is known right after a write, so async code can read it
+    # without a lazy reload (a SQL-side onupdate would expire the attribute).
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow, nullable=False
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class WorkNode(Base):
+    """A branch or a leaf. Branch status is derived from its children (roll-up)."""
+
+    __tablename__ = "work_nodes"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("work_sessions.id", ondelete="CASCADE"), index=True
+    )
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("work_nodes.id", ondelete="CASCADE"), index=True
+    )
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    depth: Mapped[int] = mapped_column(Integer, default=0)
+    title: Mapped[str] = mapped_column(String(200))
+    problem_statement: Mapped[str] = mapped_column(Text, default="")
+    root_cause: Mapped[str] = mapped_column(Text, default="")
+    code_description: Mapped[str] = mapped_column(Text, default="")
+    solution_description: Mapped[str] = mapped_column(Text, default="")
+    files: Mapped[list[str]] = mapped_column(JsonB, default=list)
+    # open | in_progress | partial | decision_needed | blocked | done | not_an_issue
+    status: Mapped[str] = mapped_column(String(16), default="open")
+    is_leaf: Mapped[bool] = mapped_column(Boolean, default=True)
+    depends_on: Mapped[list[str]] = mapped_column(JsonB, default=list)  # leaf ids
+    owner: Mapped[str | None] = mapped_column(String(120))
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    tags: Mapped[list[str]] = mapped_column(JsonB, default=list)
+    risk: Mapped[str | None] = mapped_column(String(8))  # low | medium | high
+    confidence: Mapped[str | None] = mapped_column(String(8))  # low | medium | high
+    acceptance_criteria: Mapped[list[str]] = mapped_column(JsonB, default=list)
+    artifacts: Mapped[dict[str, Any]] = mapped_column(JsonB, default=dict)  # pr, commit, tests
+    notes: Mapped[list[dict[str, Any]]] = mapped_column(JsonB, default=list)  # {at, actor, text}
+    created_at: Mapped[datetime] = _now()
+    # Python-side onupdate: the value is known right after a write, so async code can read it
+    # without a lazy reload (a SQL-side onupdate would expire the attribute).
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=_utcnow, nullable=False
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class WorkEvent(Base):
+    """Append-only history of a session: the audit trail and the web view's live feed."""
+
+    __tablename__ = "work_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("work_sessions.id", ondelete="CASCADE"), index=True
+    )
+    node_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)  # no FK: history outlives deleted nodes
+    actor: Mapped[str] = mapped_column(String(120))
+    kind: Mapped[str] = mapped_column(String(32))
+    detail: Mapped[dict[str, Any]] = mapped_column(JsonB, default=dict)
+    created_at: Mapped[datetime] = _now()
+
+
+class ApiToken(Base):
+    """Personal access token for MCP clients. Only the SHA-256 is stored; shown once at creation."""
+
+    __tablename__ = "api_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(80))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    prefix: Mapped[str] = mapped_column(String(16))  # e.g. "cbk_3f9a" for recognising it in the list
+    created_at: Mapped[datetime] = _now()
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

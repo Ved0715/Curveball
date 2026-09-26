@@ -275,7 +275,7 @@ class QueueOut(BaseModel):
 class QueueIn(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     blurb: str = Field(default="", max_length=600)
-    source: Literal["manual", "interview"] = "manual"
+    source: Literal["manual", "interview", "work"] = "manual"
     session_id: uuid.UUID | None = None
 
 
