@@ -175,34 +175,39 @@ export function WorldGate({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   /**
-   * router.push, resolving once the destination has actually rendered - or after 2.5 s
-   * regardless, so a crossing never hangs. Not a fixed timer: dev mode compiles a route on
-   * its first visit, which can take far longer than any fixed guess, and revealing the wave
-   * before the new page has painted is exactly what "frozen mid-wave, then content pops in
-   * late and overlaps" looks like. A MutationObserver on #main waits for the DOM to actually
-   * go quiet (no changes for 80 ms) instead of guessing how long that takes.
+   * router.push, resolving once the destination has committed its first real paint - or
+   * after 2.5 s regardless, so a crossing never hangs.
+   *
+   * Earlier this waited for document.body to go fully *quiet* (no mutations for 80 ms). That
+   * was wrong: while the view transition's update callback is running, the browser freezes
+   * the screen and holds it frozen until that callback resolves - and every page here keeps
+   * mutating its own DOM well past first paint (skeleton -> real content, animated numbers,
+   * staggered reveals), so "quiet" could take the better part of a second. The whole wait
+   * happened on a frozen screen, and what finally got revealed was often still the skeleton,
+   * with the real content swapping in moments later, unanimated. That's "frozen, then
+   * garbled" - not a maybe, an actual recording of it doing exactly that.
+   *
+   * Resolving on the *first* mutation instead - proof React has committed something, not
+   * proof it's finished loading - keeps that frozen window to a single frame or two. Whatever
+   * state the new page is in at that point (skeleton or not) is what the wave reveals, and
+   * its own loading UI is designed to animate in on top of that, same as any other page load.
    */
   const swap = useCallback(
     (href: string) =>
       new Promise<void>((resolve) => {
         let settled = false;
-        let quiet: ReturnType<typeof setTimeout> | undefined;
-        const observer = new MutationObserver(() => {
-          clearTimeout(quiet);
-          quiet = setTimeout(finish, 80);
-        });
-        function finish() {
+        function settle() {
           if (settled) return;
           settled = true;
-          clearTimeout(quiet);
           clearTimeout(ceiling);
           observer.disconnect();
           arrived.current = null;
-          resolve();
+          setTimeout(resolve, 32); // one more frame, so the first commit has actually painted
         }
-        const ceiling = setTimeout(finish, 2500);
+        const observer = new MutationObserver(settle);
+        const ceiling = setTimeout(settle, 2500);
         target.current = href.split("?")[0];
-        arrived.current = finish;
+        arrived.current = settle;
         // document.body, not #main: a world crossing swaps the whole layout, so the old
         // world's own #main is removed from the document (and a detached node never mutates
         // again, which would silently starve this observer). <body> is the one thing that's
