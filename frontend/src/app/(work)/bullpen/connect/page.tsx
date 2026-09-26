@@ -25,20 +25,28 @@ function snippet(client: Client, url: string, token: string): string {
   return `URL:     ${url}\nHeader:  Authorization: Bearer ${token}\nTransport: Streamable HTTP`;
 }
 
-function CopyBlock({ text, label }: { text: string; label: string }) {
+function CopyBlock({ text, label, disabled = false }: { text: string; label: string; disabled?: boolean }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="relative">
-      <pre className="overflow-x-auto rounded-xl border-2 border-line-soft bg-bg p-4 pr-14 font-mono text-[0.8rem] leading-relaxed">{text}</pre>
+      <pre
+        className={cn(
+          "overflow-x-auto rounded-xl border-2 border-line-soft bg-bg p-4 pr-14 font-mono text-[0.8rem] leading-relaxed",
+          disabled && "opacity-45 select-none",
+        )}
+      >
+        {text}
+      </pre>
       <button
         type="button"
+        disabled={disabled}
         aria-label={`Copy ${label}`}
         onClick={async () => {
           await navigator.clipboard.writeText(text);
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
         }}
-        className="absolute top-2.5 right-2.5 grid size-9 cursor-pointer place-items-center rounded-lg border-2 border-line-soft bg-surface text-muted hover:border-line hover:text-ink"
+        className="absolute top-2.5 right-2.5 grid size-9 cursor-pointer place-items-center rounded-lg border-2 border-line-soft bg-surface text-muted hover:border-line hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
       >
         {copied ? <Check className="size-4 text-good" aria-hidden /> : <Copy className="size-4" aria-hidden />}
       </button>
@@ -64,7 +72,8 @@ export default function ConnectPage() {
       .catch(() => setTokens([]));
   }, []);
 
-  const shown = fresh?.token ?? "cbk_YOUR_TOKEN";
+  // A setup line with a placeholder token can only fail, so it isn't copyable until a real one exists.
+  const shown = fresh?.token ?? "cbk_CREATE_A_TOKEN_FIRST";
 
   return (
     <div className="mx-auto max-w-4xl px-4 pt-8 sm:px-6 lg:pt-12">
@@ -166,9 +175,11 @@ export default function ConnectPage() {
             <div className="mb-4 max-w-md">
               <Segmented label="Your agent" hideLabel options={CLIENTS} value={client} onChange={setClient} />
             </div>
-            <CopyBlock text={snippet(client, url, shown)} label={`${client} setup`} />
-            <p className={cn("mt-2 text-xs text-muted", fresh?.token && "text-good")}>
-              {fresh?.token ? "Your new token is already filled in." : "Create a token above and it's filled in here."}
+            <CopyBlock text={snippet(client, url, shown)} label={`${client} setup`} disabled={!fresh?.token} />
+            <p className={cn("mt-2 text-sm", fresh?.token ? "text-good" : "font-semibold text-sun")}>
+              {fresh?.token
+                ? "Your new token is already filled in."
+                : "Create a token in step 01 first: this fills in with it and becomes copyable. (Tokens are shown only once, so an existing one can't be refilled; make a new one.)"}
               {client === "Cursor" && " Add this to .cursor/mcp.json in your project, or ~/.cursor/mcp.json for all projects."}
             </p>
           </div>
