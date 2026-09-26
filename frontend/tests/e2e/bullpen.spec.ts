@@ -110,3 +110,37 @@ test("Bullpen routes are protected and MCP needs a token", async ({ page, reques
   const r = await request.post("/api/mcp", { data: { jsonrpc: "2.0", id: 1, method: "tools/list" } });
   expect(r.status()).toBe(401);
 });
+
+test("Bullpen crossing: reduced motion skips the wave, and a double click doesn't stack it", async ({ page }) => {
+  const email = `bp-safe-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
+  await page.goto("/signup");
+  await page.getByLabel("Your name").fill("Asha Rao");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel(/^Password/).fill("correct horse 1");
+  await page.getByRole("button", { name: /Create account/ }).click();
+  await expect(page).toHaveURL(/\/today$/);
+
+  // Reduced motion: an instant swap, no wave ever drawn.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("button", { name: /Bullpen/ }).first().click();
+  await expect(page).toHaveURL(/\/bullpen$/);
+  await expect(page.locator("html")).not.toHaveAttribute("data-crossing", /.+/);
+  expect(await page.locator("svg.pointer-events-none.fixed").count()).toBe(0);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+
+  // A double click on the way back starts exactly one crossing, and nothing is left stuck.
+  const back = page.getByRole("button", { name: /Back to/ });
+  // A real rapid double click, not `force: true`: forcing bypasses Playwright's own
+  // actionability check, so a mistimed force-click can land on a *different* element once the
+  // first click has already started navigating - a Playwright footgun, not a product bug. A
+  // short timeout on the second click means "the button is already gone" fails fast and clean.
+  await back.click();
+  await back.click({ timeout: 1000 }).catch(() => {});
+  await expect(page).toHaveURL(/\/today$/);
+  await page.waitForTimeout(1200); // past WAVE_MS, so any leftover overlay would still be visible
+  await expect(page.locator("html")).not.toHaveAttribute("data-crossing", /.+/);
+  await expect(page.locator("html")).not.toHaveAttribute("data-world", "work");
+  expect(await page.locator("svg.pointer-events-none.fixed").count()).toBe(0);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expectNoHorizontalScroll(page);
+});

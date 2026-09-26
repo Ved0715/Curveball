@@ -380,3 +380,48 @@ h1[tabindex="-1"]:focus,
 h1[tabindex="-1"]:focus-visible {
   outline: none;
 }
+
+/* World crossings use view transitions (components/world-gate.tsx): our own clip-path wave
+   replaces the browser's default crossfade, and the new world paints above the old.
+
+   ::view-transition-group(root) also gets its own default animation - the browser morphs its
+   width/height/transform between the old and new root's captured sizes whenever they differ
+   (which they usually do: every page here is a different height). Left alone, that runs at
+   the same time as our own clip-path/scale animation on a differently-sized, differently-
+   positioned box, and the result is genuinely broken: two animations fighting over the same
+   element looks exactly like "frozen mid-wave" or "garbled, overlapping content", because it
+   is. Pinning the group to the viewport and turning its own animation off is what makes ours
+   the only thing moving. */
+::view-transition-group(root) {
+  animation: none;
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+::view-transition-old(root) {
+  z-index: 1;
+  transform-origin: center;
+}
+::view-transition-new(root) {
+  z-index: 2;
+}
+/* The wave's rings get their own layer above both worlds and animate live (no crossfade). */
+::view-transition-group(world-wave),
+::view-transition-old(world-wave),
+::view-transition-new(world-wave) {
+  animation: none;
+}
+::view-transition-group(world-wave) {
+  z-index: 3;
+}
+::view-transition-old(world-wave) {
+  display: none;
+}

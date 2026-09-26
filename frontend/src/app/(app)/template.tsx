@@ -2,17 +2,19 @@
 
 import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
-import { useWorldRevealed } from "@/components/world-gate";
+import { useRadialReveal, useWorldRevealed } from "@/components/world-gate";
 import { enter } from "@/lib/motion";
 
 /**
  * Re-mounts on every navigation: each page rises in gently, and focus moves to the new
- * page's heading so screen readers announce where you are.
+ * page's heading so screen readers announce where you are. Arriving from a world crossing,
+ * its own header/section/aside blocks additionally build in from the door outward.
  */
 export default function AppTemplate({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   // Coming back from Bullpen, hold the entrance until the reveal opens.
   const revealed = useWorldRevealed();
+  useRadialReveal(ref);
   useEffect(() => {
     window.scrollTo({ top: 0 });
     const t = setTimeout(() => {
