@@ -16,6 +16,13 @@ def isolated(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setattr(s, "database_url", "sqlite+aiosqlite:///:memory:")
     monkeypatch.setattr(s, "db_auto_create", True)
     monkeypatch.setattr(s, "ai_mock", True)
+    # Belt and suspenders: even if a test flips ai_mock back to False without stubbing
+    # llm.stream, there's no real key here to make a real (possibly paid) call with,
+    # whatever the developer's own backend/.env has configured.
+    monkeypatch.setattr(s, "gemini_api_key", None)
+    monkeypatch.setattr(s, "anthropic_api_key", None)
+    monkeypatch.setattr(s, "ai_api_key", None)
+    monkeypatch.setattr(s, "ai_base_url", None)
     monkeypatch.setattr(s, "internal_token", "test-internal-token")
     # Fixed fake Google client, whatever is in backend/.env. Google itself is never called.
     monkeypatch.setattr(s, "google_client_id", "test-client.apps.googleusercontent.com")

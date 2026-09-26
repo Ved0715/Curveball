@@ -203,11 +203,21 @@ def test_daily_ai_limit(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> 
     assert result(client.post(f"/api/sessions/{sid}/brief").text)
 
 
-def test_missing_api_key_is_reported(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("provider", ["gemini", "anthropic", "openai"])
+def test_missing_api_key_is_reported(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, provider: str
+) -> None:
+    """Whichever provider is selected, a missing key must fail cleanly - never make a
+    real network call. Every provider's credentials are cleared so this doesn't depend
+    on whatever happens to be in the developer's own .env."""
     sid = create(client)
-    monkeypatch.setattr(get_settings(), "ai_mock", False)
-    monkeypatch.setattr(get_settings(), "gemini_api_key", None)
-    monkeypatch.setattr(get_settings(), "anthropic_api_key", None)
+    s = get_settings()
+    monkeypatch.setattr(s, "ai_mock", False)
+    monkeypatch.setattr(s, "ai_provider", provider)
+    monkeypatch.setattr(s, "gemini_api_key", None)
+    monkeypatch.setattr(s, "anthropic_api_key", None)
+    monkeypatch.setattr(s, "ai_api_key", None)
+    monkeypatch.setattr(s, "ai_base_url", None)
     body = client.post(f"/api/sessions/{sid}/turn", json={}).text
     assert events(body)[-1] == ("error", {"code": "not_configured", "retryable": False})
 

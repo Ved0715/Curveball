@@ -14,7 +14,7 @@ from typing import Any, Literal
 import anthropic
 from pydantic import BaseModel, ValidationError
 
-from app import llm_gemini
+from app import llm_gemini, llm_openai
 from app.config import get_settings
 
 log = logging.getLogger("mockroom.llm")
@@ -69,6 +69,8 @@ def model_for(tier: Tier) -> str:
     s = get_settings()
     if s.ai_provider == "gemini":
         return gemini_models(tier)[0]
+    if s.ai_provider == "openai":
+        return s.ai_model
     return {"fast": s.model_fast, "balanced": s.model_balanced, "capable": s.model_capable}[tier]
 
 
@@ -120,11 +122,13 @@ async def stream(
     cache_system: bool = False,
 ) -> AsyncIterator[StreamEvent]:
     """Yield text deltas, then one Finished with the full text, from the active provider."""
-    source = (
-        _stream_gemini(tier, system, user, max_tokens, schema)
-        if get_settings().ai_provider == "gemini"
-        else _stream_anthropic(tier, system, user, max_tokens, schema, cache_system)
-    )
+    provider = get_settings().ai_provider
+    if provider == "gemini":
+        source = _stream_gemini(tier, system, user, max_tokens, schema)
+    elif provider == "openai":
+        source = _stream_openai(tier, system, user, max_tokens, schema)
+    else:
+        source = _stream_anthropic(tier, system, user, max_tokens, schema, cache_system)
     async for ev in source:
         yield ev
 
@@ -139,6 +143,24 @@ async def _stream_gemini(
         "capable": s.gemini_thinking_capable,
     }[tier]
     async for item in llm_gemini.stream(gemini_models(tier), level or None, system, user, max_tokens, schema):
+        if item[0] == "delta":
+            yield TextDelta(item[1])
+        else:
+            _, text, tokens_in, tokens_out, served = item
+            log.info("ai call tier=%s model=%s in=%s out=%s", tier, served, tokens_in, tokens_out)
+            yield Finished(text, tokens_in=tokens_in, tokens_out=tokens_out, model=served)
+
+
+async def _stream_openai(
+    tier: Tier, system: str, user: str, max_tokens: int, schema: type[BaseModel] | None
+) -> AsyncIterator[StreamEvent]:
+    s = get_settings()
+    effort = {
+        "fast": s.ai_reasoning_fast,
+        "balanced": s.ai_reasoning_balanced,
+        "capable": s.ai_reasoning_capable,
+    }[tier]
+    async for item in llm_openai.stream(s.ai_model, system, user, max_tokens, schema, effort or None):
         if item[0] == "delta":
             yield TextDelta(item[1])
         else:

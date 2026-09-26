@@ -15,11 +15,23 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # Which AI provider serves every call.
-    ai_provider: Literal["gemini", "anthropic"] = "gemini"
+    # "openai" means any OpenAI-compatible Chat Completions endpoint (an internal
+    # gateway, a self-hosted vLLM server, etc.) - set AI_BASE_URL to point at it.
+    ai_provider: Literal["gemini", "anthropic", "openai"] = "gemini"
 
     # Secrets: server-only. Never sent to the browser.
     gemini_api_key: str | None = None
     anthropic_api_key: str | None = None
+    # For AI_PROVIDER=openai: any server speaking the OpenAI Chat Completions protocol.
+    ai_api_key: str | None = None
+    ai_base_url: str | None = None
+    ai_model: str = "qwen-3.8-27b"
+    # Reasoning effort per tier ("none"/"low"/"medium"/"xhigh", or blank to let the
+    # gateway default). Reasoning tokens count against max_tokens, so tight budgets
+    # (interviewer turns, hints) need "none" or they can be cut off before any answer.
+    ai_reasoning_fast: str = "none"
+    ai_reasoning_balanced: str = "low"
+    ai_reasoning_capable: str = "medium"
 
     # When true, every AI call returns canned responses. Lets you click through the
     # whole app with no API key, and keeps end-to-end tests free and deterministic.
@@ -83,7 +95,11 @@ class Settings(BaseSettings):
 
     @property
     def ai_key_present(self) -> bool:
-        return bool(self.gemini_api_key if self.ai_provider == "gemini" else self.anthropic_api_key)
+        if self.ai_provider == "gemini":
+            return bool(self.gemini_api_key)
+        if self.ai_provider == "openai":
+            return bool(self.ai_api_key and self.ai_base_url)
+        return bool(self.anthropic_api_key)
 
     @property
     def google_enabled(self) -> bool:
