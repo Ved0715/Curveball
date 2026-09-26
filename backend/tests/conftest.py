@@ -3,7 +3,7 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, llm, llm_gemini
+from app import auth, llm, llm_gemini, mcp_server, tokens
 from app import db as db_module
 from app.config import get_settings
 from app.main import app
@@ -34,6 +34,8 @@ def isolated(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     llm_gemini._client.cache_clear()
     auth.login_limiter.reset()
     auth.signup_limiter.reset()
+    mcp_server._limiter.reset()
+    tokens.clear_cache()
     yield
 
 

@@ -6,8 +6,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.routing import Route
+from starlette.types import Receive, Scope, Send
 
-from app import learning
+from app import learning, mcp_server
 from app.config import get_settings
 from app.db import get_engine, get_sessionmaker
 from app.errors import install_error_handlers
@@ -18,7 +20,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if get_settings().db_auto_create:
         # Throwaway SQLite only (tests / e2e). Real databases use `alembic upgrade head`.
         async with get_engine().begin() as conn:
@@ -28,8 +30,19 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             changed = await learning.sync_curriculum(db)
             if changed:
                 logging.getLogger("mockroom").info("curriculum: %d topic(s) added or updated", changed)
-    yield
+    mcp_app, mcp_manager = mcp_server.build_http_app()
+    app.state.mcp = mcp_app
+    async with mcp_manager.run():
+        yield
     await get_engine().dispose()
+
+
+class McpEndpoint:
+    """/api/mcp: Bullpen's MCP server for coding agents (see app/mcp_server.py). A class so
+    Starlette mounts it as a raw ASGI app rather than a request handler."""
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        await scope["app"].state.mcp(scope, receive, send)
 
 
 def create_app() -> FastAPI:
@@ -76,6 +89,7 @@ def create_app() -> FastAPI:
         work.router,
     ):
         app.include_router(r)
+    app.router.routes.append(Route("/api/mcp", endpoint=McpEndpoint(), methods=["GET", "POST", "DELETE"]))
     return app
 
 
