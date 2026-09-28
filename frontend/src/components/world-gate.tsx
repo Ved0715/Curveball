@@ -75,7 +75,12 @@ function viewTransitions(): StartViewTransition | null {
 
 /** Distance from the door to the farthest corner: the circle's final reach. */
 function reach(cx: number, cy: number): number {
-  return Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy)) + 2;
+  const corner = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy)) + 2;
+  // wavyRing wobbles the radius by up to ±(amp + amp/2) = up to -4.2% at its default amp - a
+  // real, visible gap at whichever angle that trough lands on (the old, dark world staying
+  // uncovered in a strip), not just a hypothetical. Inflate the target radius so even the
+  // deepest trough still clears the farthest corner.
+  return corner / 0.94;
 }
 
 const WAVE_POINTS = 64;
