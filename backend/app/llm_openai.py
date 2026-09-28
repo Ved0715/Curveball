@@ -117,6 +117,9 @@ async def stream(
     if finish == "length":
         raise AIError("invalid_output", f"{model}: cut off at max_tokens (reasoning may have used it up)")
 
+    result = "".join(parts)
+    log.info("%s response (%d chars): %r", served_model, len(result), result[:500])
+
     tokens_in = getattr(usage, "prompt_tokens", 0) or 0
     tokens_out = getattr(usage, "completion_tokens", 0) or 0
-    yield ("done", "".join(parts), tokens_in, tokens_out, served_model)
+    yield ("done", result, tokens_in, tokens_out, served_model)
